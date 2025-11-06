@@ -1,0 +1,223 @@
+// #nprogress {
+//   pointer-events: none;
+// }
+
+// #nprogress .bar {
+//   background: rgb(13, 148, 136);
+//   opacity: 0.75;
+//   position: fixed;
+//   z-index: 1031;
+//   top: 0;
+//   left: 0;
+//   width: 100%;
+//   height: 2px;
+// }
+#app {
+  width: 100%;
+  height: 100%;
+}
+
+#app .el-button + .el-button {
+  margin-left: 20px;
+}
+#app .el-button {
+  padding: 8px 15px;
+}
+body .el-button {
+  padding: 8px 15px;
+}
+
+#app .el-radio-button__inner {
+  padding: 8px 15px;
+}
+/* 输入框 + 下拉框 默认宽度 */
+#app .el-picker-panel .el-input {
+  width: 146px;
+}
+#app .el-form-item__label {
+  min-width: 68px;
+  white-space: nowrap;
+}
+/* 表格head背景 */
+#app .el-table thead th.el-table__cell {
+  background: var(--el-fill-color-light);
+}
+#app .el-table .cell {
+  white-space: nowrap;
+}
+#app tbody .cell {
+  color: #1e2128;
+}
+#app .el-table.is-scrolling-none th.el-table-fixed-column--left,
+#app .el-table.is-scrolling-none th.el-table-fixed-column--right {
+  background-color: var(--el-fill-color-light);
+}
+/* 分页 */
+#app .pager {
+  display: flex;
+  justify-content: center;
+  padding-top: 10px;
+}
+// #app .el-pagination .el-select {
+//   width: auto;
+// }
+/* 弹窗 */
+#app .el-dialog {
+  // min-width: 600px;
+}
+#app .el-dialog .el-form-item {
+  justify-content: center;
+}
+a {
+  color: var(--el-color-primary);
+  cursor: pointer;
+}
+
+#app .el-tabs__item {
+  font-size: 14px;
+  font-weight: bold;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+#app .el-tabs__item.is-active {
+  color: var(--el-color-primary);
+}
+
+// 列表统计数据
+.summary {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+.summary span {
+  margin-right: 20px;
+}
+
+.table-fields {
+  display: flex;
+  flex-wrap: wrap;
+}
+.table-field {
+  width: 50%;
+  max-width: 50%;
+  padding: 4px 6px;
+}
+
+/* 表格提示 */
+.tips-warning {
+  margin-bottom: 10px;
+  color: var(--el-color-warning);
+  position: relative;
+  top: -2px;
+}
+.tips-warning .el-icon {
+  position: relative;
+  top: 3px;
+  font-size: 15px;
+}
+
+.null-data {
+  text-align: center;
+}
+.el-table {
+  overflow: hidden;
+  width: 100%;
+}
+.el-table thead {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  table-layout: fixed;
+  z-index: 10;
+}
+.el-table .cell .el-button {
+  padding: 0 !important;
+}
+
+.page-container {
+  .table-title {
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    span {
+      width: 3px;
+      height: 14px;
+      background: #3145c2;
+      border-radius: 2px;
+    }
+    h2 {
+      font-size: 16px;
+      font-weight: 500;
+      color: #1e2128;
+      padding-left: 8px;
+    }
+  }
+}
+
+.el-table thead th .cell {
+  border-left: 1px solid #d4d7de;
+}
+.el-table thead th:first-child .cell {
+  border-left: 0;
+}
+.dialog-form-content {
+  width: 65%;
+  margin: 0 auto;
+}
+.dialog-form-content .el-form {
+  width: 100%;
+}
+.dialog-form-content .el-form .el-form-item__label {
+  width: 88px;
+  text-align: right;
+}
+.dialog-form-content .el-form .el-select {
+  width: 100%;
+}
+
+// 卡片标题的样式
+.custom-title::before {
+  display: inline-block;
+  content: '';
+  margin-right: 6px;
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--el-color-primary);
+}
+
+.message-notification.right {
+  padding-right: 14px;
+}
+.message-notification.right .el-notification__group {
+  width: 100%;
+}
+
+.message-notification {
+  &.el-notification {
+    position: absolute;
+    margin-bottom: 10px;
+    top: 0;
+    left: 0;
+    min-height: 220px;
+    box-shadow: none;
+    border: 1px solid #ddd;
+  }
+}
+
+.mx200-el-popper {
+  max-width: 200px !important;
+}
+
+#app .table-tooltip {
+  max-width: 500px;
+}
+
+:root {
+  --el-text-color-regular: #1e2128;
+}
+
+a {
+  color: var(--el-color-primary);
+}
