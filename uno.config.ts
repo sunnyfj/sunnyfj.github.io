@@ -36,9 +36,9 @@ export default defineConfig({
     }),
 
     // rem 转 px 预设
-    presetRemToPx({
-      baseFontSize: 4,
-    }),
+    // presetRemToPx({
+    //   baseFontSize: 4,
+    // }),
   ],
   extractors: [
     // Pug 提取器 template lang="pug"

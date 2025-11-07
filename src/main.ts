@@ -8,9 +8,8 @@ import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
 
-// 引入全局样式
-import './style.css'
 // 引入 unocss 样式
+import '@/styles/reset.css'
 import 'virtual:uno.css'
 import '@/styles/element.scss'
 import '@/styles/index.scss'

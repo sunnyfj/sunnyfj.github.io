@@ -12,15 +12,23 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    Footer: typeof import('./../components/Footer.vue')['default']
     HelloWorld: typeof import('./../components/HelloWorld.vue')['default']
+    Logo: typeof import('./../components/Logo.vue')['default']
+    NavBar: typeof import('./../components/NavBar.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
+    ToggleTheme: typeof import('./../components/ToggleTheme.vue')['default']
   }
 }
 
 // For TSX support
 declare global {
+  const Footer: typeof import('./../components/Footer.vue')['default']
   const HelloWorld: typeof import('./../components/HelloWorld.vue')['default']
+  const Logo: typeof import('./../components/Logo.vue')['default']
+  const NavBar: typeof import('./../components/NavBar.vue')['default']
   const RouterLink: typeof import('vue-router')['RouterLink']
   const RouterView: typeof import('vue-router')['RouterView']
+  const ToggleTheme: typeof import('./../components/ToggleTheme.vue')['default']
 }
