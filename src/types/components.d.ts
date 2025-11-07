@@ -12,6 +12,8 @@ export {}
 /* prettier-ignore */
 declare module 'vue' {
   export interface GlobalComponents {
+    ArtDots: typeof import('./../components/ArtDots.vue')['default']
+    ArtPlum: typeof import('./../components/ArtPlum.vue')['default']
     Footer: typeof import('./../components/Footer.vue')['default']
     HelloWorld: typeof import('./../components/HelloWorld.vue')['default']
     Logo: typeof import('./../components/Logo.vue')['default']
@@ -24,6 +26,8 @@ declare module 'vue' {
 
 // For TSX support
 declare global {
+  const ArtDots: typeof import('./../components/ArtDots.vue')['default']
+  const ArtPlum: typeof import('./../components/ArtPlum.vue')['default']
   const Footer: typeof import('./../components/Footer.vue')['default']
   const HelloWorld: typeof import('./../components/HelloWorld.vue')['default']
   const Logo: typeof import('./../components/Logo.vue')['default']
