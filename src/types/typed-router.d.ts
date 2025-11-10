@@ -30,9 +30,16 @@ declare module 'vue-router/auto-routes' {
       { 404: ParamValue<false> },
       | never
     >,
-    '/demos': RouteRecordInfo<
+    '/demos/': RouteRecordInfo<
+      '/demos/',
       '/demos',
-      '/demos',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/demos/css': RouteRecordInfo<
+      '/demos/css',
+      '/demos/css',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -56,9 +63,15 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
-    'pages/demos.md': {
+    'pages/demos/index.md': {
       routes:
-        | '/demos'
+        | '/demos/'
+      views:
+        | never
+    }
+    'pages/demos/css.md': {
+      routes:
+        | '/demos/css'
       views:
         | never
     }

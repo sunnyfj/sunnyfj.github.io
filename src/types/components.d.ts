@@ -14,6 +14,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     ArtDots: typeof import('./../components/ArtDots.vue')['default']
     ArtPlum: typeof import('./../components/ArtPlum.vue')['default']
+    Flip: typeof import('./../components/css/Flip.vue')['default']
     Footer: typeof import('./../components/Footer.vue')['default']
     Logo: typeof import('./../components/Logo.vue')['default']
     NavBar: typeof import('./../components/NavBar.vue')['default']
@@ -27,6 +28,7 @@ declare module 'vue' {
 declare global {
   const ArtDots: typeof import('./../components/ArtDots.vue')['default']
   const ArtPlum: typeof import('./../components/ArtPlum.vue')['default']
+  const Flip: typeof import('./../components/css/Flip.vue')['default']
   const Footer: typeof import('./../components/Footer.vue')['default']
   const Logo: typeof import('./../components/Logo.vue')['default']
   const NavBar: typeof import('./../components/NavBar.vue')['default']
