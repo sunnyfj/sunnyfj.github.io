@@ -24,6 +24,9 @@ export default defineConfig({
     vueJsx(),
     Markdown({
       headEnabled: true,
+      wrapperClasses: (_id, code) => code.includes('@layout-full-width')
+        ? ''
+        : 'prose m-auto slide-enter-content',
     }),
     AutoImport({
       imports: ['vue', 'vue-router', '@vueuse/core', VueRouterAutoImports],

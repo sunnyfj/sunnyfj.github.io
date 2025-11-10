@@ -14,9 +14,12 @@ import 'dayjs/locale/zh-cn'
 
 import 'element-plus/dist/index.css'
 import '@/styles/reset.css'
-import 'virtual:uno.css'
 
 import '@/styles/index.css'
+import './styles/prose.css'
+import './styles/markdown.css'
+
+import 'virtual:uno.css'
 
 const app = createApp(App)
 
