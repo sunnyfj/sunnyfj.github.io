@@ -17,6 +17,7 @@
     "@unocss/reset": "^66.5.4",
     "@vueuse/core": "^14.0.0",
     "axios": "^1.13.2",
+    "canvas-confetti": "^1.9.4",
     "dayjs": "^1.11.19",
     "element-plus": "^2.11.7",
     "gsap": "^3.13.0",
@@ -29,6 +30,7 @@
   },
   "devDependencies": {
     "@antfu/eslint-config": "^6.2.0",
+    "@types/canvas-confetti": "^1.9.0",
     "@types/node": "^24.6.0",
     "@types/nprogress": "^0.2.0",
     "@unocss/eslint-plugin": "^66.5.4",
