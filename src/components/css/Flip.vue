@@ -18,14 +18,13 @@
   align-items: center;
   width: 100%;
   height: 700px;
-  perspective: 800px;
+  perspective: 2000px;
 }
 
 .card-inner {
   position: relative;
   width: min(60vw, 600px); /* 最大400px，响应式缩放 */
   aspect-ratio: 1 / 1;     /* 保持正方形 */
-  transform-style: preserve-3d;
   transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
