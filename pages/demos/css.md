@@ -1,1 +1,2 @@
+<!-- @layout-full-width -->
 <Flip />
