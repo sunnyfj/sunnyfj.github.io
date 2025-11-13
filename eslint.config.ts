@@ -7,5 +7,4 @@ export default antfu({
   markdown: {
     overrides: {},
   },
-
 })

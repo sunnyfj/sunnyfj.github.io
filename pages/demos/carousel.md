@@ -1,0 +1,2 @@
+<!-- @layout-full-width -->
+<CarouselCps />
