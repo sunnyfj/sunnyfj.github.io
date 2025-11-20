@@ -17,7 +17,7 @@ function prev() {
     carouselList.value!.style.transition = 'none'
     carouselList.value!.style.transform = `translateX(-${(carouselCount.value) * 100}%)`
     // 使得浏览器渲染完成后再切换过渡 1 同步代码 强制回流  2 异步代码
-    const _ = carouselList.value!.clientWidth
+    void carouselList.value!.clientWidth
     moveTo(carouselCount.value - 1)
   }
   else {
@@ -29,7 +29,7 @@ function next() {
   if (currentIndex.value === carouselCount.value - 1) {
     carouselList.value!.style.transition = 'none'
     carouselList.value!.style.transform = `translateX(100%)`
-    const _ = carouselList.value!.clientWidth
+    void carouselList.value!.clientWidth
     moveTo(0)
   }
   else {
