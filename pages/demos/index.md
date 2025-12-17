@@ -9,4 +9,5 @@ title: Demos
 <router-link to="/demos/css">CSS</router-link>
 <router-link to="/demos/js">JS</router-link>
 <router-link to="/demos/carousel">carousel</router-link>
+<router-link to="/demos/event-loop">Event loop</router-link>
 </div>
