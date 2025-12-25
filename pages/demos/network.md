@@ -45,7 +45,7 @@ http://a.com:80/news/detail?id=1#t?
 - 当协议是https时，端口默认是443  可以省略
 - 协议、域名、路径（默认客户端会补上 / 根路径）是必须的， 其他都是可选的
 
- ### http
+### http
 
  超文本传输协议（HyperText Transfer Protocol）是一个广泛运用于互联网的应用层协议。
 
@@ -214,3 +214,44 @@ AJAX就是指在web应用程序中异步向服务器发送请求。
 | 流 | 不支持 | 支持 |
 | API风格 | Event | Promise |
 | 活跃度 | 停止更新 | 不断更新 |
+
+### 其他
+
+fetch 设计 第一次Promise等待结果是响应行，响应头，第二次Promise等待结果是响应体。
+
+```js
+fetch(url)
+  .then((response) => {
+    console.log(response.status) // 200
+    console.log(response.statusText) // OK
+    console.log(response.headers) // Headers {}
+    return response.text()
+  })
+  .then((body) => {
+    console.log(body) // <html>...</html>
+  })
+```
+
+URL本质是获取资源
+
+字符串是一种资源，它可以被获取，因此URL可以被获取  dataUrl
+
+希望程序平易近人
+
+`流式读取`
+
+```js
+let content = ''
+const response = await fetch(url)
+const reader = response.body.getReader()
+while (true) {
+  const { done, value } = await reader.read()
+  if (done) {
+    break
+  }
+  console.log(value) // Uint8Array(1024)  二进制
+  // 转换为字符串
+  const text = new TextDecoder().decode(value)
+  content += text
+}
+```
