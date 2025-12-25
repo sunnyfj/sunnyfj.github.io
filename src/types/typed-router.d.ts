@@ -44,9 +44,23 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/demos/browser': RouteRecordInfo<
+      '/demos/browser',
+      '/demos/browser',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/demos/carousel': RouteRecordInfo<
       '/demos/carousel',
       '/demos/carousel',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/demos/cors': RouteRecordInfo<
+      '/demos/cors',
+      '/demos/cors',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -58,9 +72,30 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/demos/event-loop': RouteRecordInfo<
+      '/demos/event-loop',
+      '/demos/event-loop',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/demos/js': RouteRecordInfo<
       '/demos/js',
       '/demos/js',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/demos/network': RouteRecordInfo<
+      '/demos/network',
+      '/demos/network',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/demos/storage': RouteRecordInfo<
+      '/demos/storage',
+      '/demos/storage',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -96,9 +131,21 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'pages/demos/browser.md': {
+      routes:
+        | '/demos/browser'
+      views:
+        | never
+    }
     'pages/demos/carousel.md': {
       routes:
         | '/demos/carousel'
+      views:
+        | never
+    }
+    'pages/demos/cors.md': {
+      routes:
+        | '/demos/cors'
       views:
         | never
     }
@@ -108,9 +155,27 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'pages/demos/event-loop.md': {
+      routes:
+        | '/demos/event-loop'
+      views:
+        | never
+    }
     'pages/demos/js.md': {
       routes:
         | '/demos/js'
+      views:
+        | never
+    }
+    'pages/demos/network.md': {
+      routes:
+        | '/demos/network'
+      views:
+        | never
+    }
+    'pages/demos/storage.md': {
+      routes:
+        | '/demos/storage'
       views:
         | never
     }
