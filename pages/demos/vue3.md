@@ -347,3 +347,350 @@ Vue 的整体特征总结
   - 支持跨平台
 - 支持组件化与组件级更新
 - 路由 / 状态管理 / 构建工具 属于 Vue 生态
+
+## SPA 的理解
+
+SPA 是什么
+- **SPA（Single Page Application）**：单页应用
+- 对应概念：**MPA（Multi Page Application）**：多页应用
+- 现代前端项目（Vue / React）多数采用 SPA
+
+SPA 的工作方式（CSR）
+- 构建结果：
+  - 只有一个 HTML（通常只有一个挂载点 `#app`）
+  - JS 执行后在浏览器生成 DOM
+- 页面切换：
+  - 通过 **前端路由**
+  - 切换的是组件，而不是页面
+- 渲染方式：
+  - **客户端渲染（CSR, Client Side Rendering）**
+  - DOM 在浏览器中由 JS 生成
+
+SPA 的优缺点
+
+优点
+- 页面切换快（局部刷新）
+- 用户体验好
+- 前后端分离
+- 服务端压力小
+- 组件化，维护成本低
+
+缺点
+- **首屏加载慢 / 白屏时间长**
+- **不利于 SEO**
+  - 首次返回的是空 HTML
+  - 内容依赖 JS 渲染
+
+MPA 的特点（SSR）
+
+MPA 是什么
+- 每个页面都是一个完整 HTML
+- 页面跳转会刷新整个页面
+- 渲染方式：
+  - **服务端渲染（SSR, Server Side Rendering）**
+  - 服务端返回已渲染好的 HTML
+
+优点
+- 首屏加载快
+- 天然支持 SEO
+- 返回即有内容，无白屏
+
+缺点
+- 页面切换慢（整页刷新）
+- 维护成本高
+- 资源重复加载
+- 服务端压力大
+
+SPA vs MPA 对比总结
+
+| 维度 | SPA | MPA |
+|----|----|----|
+| 页面数量 | 单 HTML | 多 HTML |
+| 页面切换 | 局部刷新 | 整页刷新 |
+| 渲染方式 | CSR | SSR |
+| 用户体验 | 好 | 一般 |
+| SEO | 不友好 | 友好 |
+| 首屏速度 | 慢 | 快 |
+| 维护成本 | 低 | 高 |
+
+SPA 的核心问题
+- SEO 无法直接实现
+- 首屏白屏时间较长
+
+SPA 的解决方案
+
+方案一：SSG（预渲染 / 静态生成）
+- **SSG（Static Site Generation）**
+- 构建阶段：
+  - 使用浏览器运行 SPA
+  - 生成静态 HTML 文件
+- 访问时：
+  - 先返回静态 HTML
+  - 再由 JS 接管页面
+
+优点
+- 解决 SEO
+- 减少白屏时间
+
+缺点
+- 不适合动态内容
+- 数据变化频繁会导致内容失真
+
+适用场景
+- 官网
+- 文档站
+- 静态展示型网站
+
+方案二：SSR + CSR（主流方案）
+- **首屏：SSR**
+  - 服务端渲染 HTML
+  - 解决首屏慢 & SEO
+- **后续交互：CSR**
+  - 前端路由
+  - 组件切换
+
+优点
+- 结合 SPA + MPA 优势
+- 体验好
+- 支持 SEO
+- 首屏快
+
+技术选型
+- Vue SSR 框架：**Nuxt**
+- React SSR 框架：**Next**
+
+SPA 总结（标准面试回答）
+
+- SPA 优点：
+  - 用户体验好
+  - 维护成本低
+  - 前后端分离
+- SPA 缺点：
+  - 首屏加载慢
+  - 不利于 SEO
+- 解决方案：
+  - SSG（适合静态站）
+  - SSR + CSR（主流方案）
+
+## 为什么 Vue 需要虚拟 DOM
+
+- 虚拟 DOM 本质是一个 **JavaScript 对象**
+- 用对象来描述真实 DOM 的结构和属性
+- 不是直接操作真实 DOM
+
+虚拟 DOM 出现的原因：
+- 真实 DOM 属性多、结构复杂
+- 频繁操作真实 DOM 会触发重排、重绘，性能开销大
+- 初学者容易写出大量低效 DOM 操作代码
+
+虚拟 DOM 的核心价值之一：
+- 把 DOM 操作转化为 **对象操作**
+- 多次变更可以先在内存中完成
+- 最终只把**最小差异**更新到真实 DOM
+- 配合 diff 算法，减少真实 DOM 操作次数
+
+虚拟 DOM 的第二个重要价值：
+- **与平台无关**
+- 不依赖浏览器 DOM API
+- 可在不同环境运行：
+  - 浏览器
+  - Node（组件测试）
+  - 小程序
+  - App（Native 渲染）
+- 实现跨平台能力
+
+虚拟 DOM 的生成过程：
+- 开发时编写的是 `template`
+- 模板会被 **编译成 render 函数**
+- 页面渲染时执行 render 函数
+- render 函数返回的结果就是 **虚拟 DOM**
+
+初次渲染流程：
+- 调用 render
+- 生成虚拟 DOM
+- 通过 patch 过程
+- 将虚拟 DOM 转换为真实 DOM
+- 插入页面
+
+更新时（diff 流程）：
+- 第一次渲染生成旧虚拟 DOM（oldVNode）
+- 数据变化后再次调用 render
+- 生成新虚拟 DOM（newVNode）
+- 新旧虚拟 DOM 进行 diff 对比
+- 计算最小变更
+- 只更新变化的真实 DOM
+
+虚拟 DOM 的最终作用总结：
+- 减少真实 DOM 操作
+- 提升性能
+- 支持 diff 算法
+- 支持跨平台渲染
+- 是 Vue 渲染机制的核心基础
+
+## 那我不用虚拟 DOM 可不可以？
+
+- **可以不用**
+- 虚拟 DOM 不是必须方案
+
+不用虚拟 DOM：
+- 直接操作真实 DOM
+- 或编译阶段生成精确更新代码
+
+典型不用虚拟 DOM 的框架：
+- **Svelte**
+  - 编译时生成精确 DOM 操作代码
+  - 运行时几乎不需要 diff
+- **部分小程序框架**
+  - 直接绑定原生视图层
+
+优点：
+- 抽象更少
+- 理论性能更高
+
+缺点：
+- 实现复杂
+- 强依赖平台
+- 不利于维护和跨平台
+
+结论：
+- 虚拟 DOM 是工程上的折中方案
+- 在通用性、可维护性和性能之间取得平衡
+
+## 对 Vue 组件化的理解
+
+- **组件化 vs 模块化**
+  - 组件化：封装 UI
+  - 模块化：封装业务逻辑
+  - 目的都是 **复用与组合**
+
+- **组件核心组成**
+  - **模板**：渲染 UI
+  - **属性（props）**：传递数据，控制组件显示
+  - **事件**：向外派发行为
+  - **插槽（slot）**：允许外部内容注入组件
+  - **生命周期钩子**：组件额外逻辑处理
+
+- **组件化优势**
+  - 提升开发效率（高内聚、低耦合、可复用、可组合）
+  - 可单独测试
+  - 易于维护
+  - 支持 **组件级更新**：只更新有数据变化的组件
+
+- **渲染机制**
+  - Vue 组件有渲染函数
+    - Vue 2：watcher（渲染 watch）
+    - Vue 3：effect（渲染 effect）
+  - 数据变化时触发对应 watcher/effect，重新渲染组件
+
+- **组件拆分策略**
+  - 合理拆分组件：减少不必要的更新
+  - 拆分过细：会产生过多 watcher/effect，浪费性能
+  - 原则：**既不粗也不过细，合理即可**
+
+## 为什么 Vue 需要虚拟 DOM 和 Diff 算法？
+
+- **问题背景**
+  - Vue 使用响应式（数据劫持）可以精确知道哪个数据变化
+  - 看似可以直接更新对应 DOM，不需要额外比较
+  - 那为什么还要虚拟 DOM + Diff 算法？
+
+- **原因分析**
+  1. **单属性 watcher 太多消耗大**
+     - 页面数据量大时，如果每个属性都对应一个 watcher/effect，会占用大量内存
+     - 比如 100 个数据 → 100 个 watcher/effect → 页面可能变卡
+  2. **组件级划分更高效**
+     - Vue 采用组件级 watcher/effect
+     - 数据变化只更新所属组件
+     - 避免每个属性都创建 watcher，节省内存
+  3. **虚拟 DOM + Diff 算法**
+     - 用于组件更新时的细粒度优化
+     - 对比新旧虚拟 DOM，只更新最小差异
+     - 保证性能，同时简化更新逻辑
+
+- **总结**
+  - Vue 选择 **响应式 + 虚拟 DOM + Diff 算法** 是折中方案
+  - 优点：
+    - 减少 watcher/effect 数量
+    - 组件级更新，高效
+    - 更新精准，性能可控
+
+## 对响应式数据的理解
+
+如何实现响应式数据
+
+数组和对象类型当值变化时如何劫持到。对象内部通过 defineReactive 方法, 使用 Object.defineProperty 将属性进行劫持 (只会劫持已经存在的属性), 数组则是通过重写数组方法来实现。多层对象是通过递归来实现劫持。Vue3 则采用 proxy
+
+vue2处理缺陷
+- 在 Vue2 的时候使用 defineProperty 来进行数据的劫持, 需要对属性进行重写添加 getter及 setter 性能差。
+- 当新增属性和删除属性时无法监控变化。需要通过 delete 实现
+- 数组不采用 defineProperty 来进行劫持（浪费性能, 对所有索引进行劫持会造成性能浪费）需要对数组单独进行处理。- 对于 ES6 中新产生的 Map、Set 这些数据结构不支持。
+
+Vue2 与 Vue3 实现对比
+```js
+// vue2
+function defineReactive(target, key, value) {
+  observer(value)
+  Object.defineProperty(target, key, {
+    get() {
+      // 依赖收集 记录对应的渲染 watcher
+      return value
+    },
+    set(newValue) {
+      // 触发对应渲染 watcher 更新
+      if (value !== newValue) {
+        value = newValue
+        observer(newValue)
+      }
+    }
+  })
+}
+function observer(data) {
+  if (typeof data !== 'object') {
+    return data
+  }
+  for (const key in data) {
+    defineReactive(data, key, data[key])
+  }
+}
+// 注意：数据的层级不要太深，因为层级比较深的话呢，一上来，需要去递归去判断一下，如果这个值呢？是个对象，我就要递归的去处理
+// 每次用户取值都会触发 get 方法， 因此减少避免触发getter的次数。
+const data = {
+  num: 1,
+}
+let num = this.data.num
+for (let i = 0; i < 1000; i++) {
+  num++
+}
+this.num = num
+
+// -------------------------
+// vue3
+const handler = { // 源码区分，普通对象 与 Set/Map 等数据结构  不同的处理方式
+  get(target, key) {
+    // 依赖收集 记录对应的渲染 effect
+    // 在获取的时候判断是否是对象, 如果是对象, 则代理该对象
+    if (typeof target[key] === 'object') {
+      return new Proxy(target[key], handler)
+    }
+    return Reflect.get(target, key)
+  },
+  set(target, key, value) {
+    // 触发对应渲染 effect 更新
+    if (target[key] !== value) {
+      return Reflect.set(target, key, value)
+    }
+    return true
+  }
+}
+function reactive(target) {
+  return new Proxy(target, handler)
+}
+
+const proxyData = reactive({
+  num: 1,
+  obj: {
+    a: 1,
+  }
+})
+console.log(proxyData.obj) // 才会触发再次代理，懒代理
+```
