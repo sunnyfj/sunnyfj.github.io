@@ -587,7 +587,7 @@ SPA 总结（标准面试回答）
   - 拆分过细：会产生过多 watcher/effect，浪费性能
   - 原则：**既不粗也不过细，合理即可**
 
-## 为什么 Vue 需要虚拟 DOM 和 Diff 算法？
+## Vue通过数据劫持可以精准知道哪个数据变化，为什么 Vue 需要虚拟 DOM 和 Diff 算法？
 
 - **问题背景**
   - Vue 使用响应式（数据劫持）可以精确知道哪个数据变化
@@ -694,3 +694,262 @@ const proxyData = reactive({
 })
 console.log(proxyData.obj) // 才会触发再次代理，懒代理
 ```
+
+## Vue 中如何检测数组变化
+
+实现数组劫持
+- 数组考虑性能原因没有用 defineProperty 来进行对数组的每一项拦截，而是选择重写数组（push、pop、shift、unshift、splice、sort、reverse）”改变原始数组的变异方法“方法。
+- 数组中如果是对象类型, 则需要递归的进行劫持。
+
+数组的缺点
+
+- 数组的索引和长度变化是无法被劫持到的。
+
+```js
+// vue2
+const newArrayProto = Object.create(Array.prototype)
+
+const oldArrayProto = Array.prototype;
+
+['push', 'shift', 'unshift', 'pop', 'reverse', 'sort', 'splice'].forEach((method) => {
+  newArrayProto[method] = function (...args) {
+    // 监控到了数组的变化
+    console.log('用户调用了:', method)
+    oldArrayProto[method].apply(this, ...args)
+  }
+})
+
+function defineReactive(target, key, value) {
+  observer(value)
+  Object.defineProperty(target, key, {
+    get() {
+      // 依赖收集 记录对应的渲染 watcher
+      return value
+    },
+    set(newValue) {
+      // 触发对应渲染 watcher 更新
+      if (value !== newValue) {
+        value = newValue
+        observer(newValue)
+      }
+    }
+  })
+}
+function observer(data) {
+  if (typeof data !== 'object') {
+    return data
+  }
+  // 数组的情况
+  if (Array.isArray(data)) {
+    data.__proto__ = newArrayProto
+  }
+  else {
+    for (const key in data) {
+      defineReactive(data, key, data[key])
+    }
+  }
+}
+
+const data = {
+  arr: [1, 2, 3],
+}
+observer(data)
+data.arr.push(4)
+console.log(data.arr)
+```
+
+vue3 中采用 proxy 来进行数组的劫持，proxy 天然支持数组的索引及长度变化检测。
+
+## Vue 中如何进行依赖收集
+
+Vue 2
+依赖收集的流程
+- 每个属性都拥有自己的dep属性，存放他所依赖的 watcher，当属性值变化时，会通知对应的 watcher 进行更新。
+- 默认在初始化时会调用 render 函数，此时会触发属性依赖收集 dep.depend()
+- 当属性变化时会触发 watcher 更新 dep.notify()
+
+<img src="@/assets/vue1.png" alt="vue1" />
+
+响应式更新的**核心流程**：
+**组件渲染时执行 render → 取响应式数据 → 收集 watcher → 数据变化通知 watcher → 重新 render**
+
+组件在 **mount** 阶段会创建一个 **渲染 watcher**。
+这个 watcher 的核心职责就是：**执行组件的 render 方法**。
+
+当 `new Watcher` 时：
+- watcher 会被 **暂存到全局变量**（`Dep.target`）
+- 随后立刻执行它的 `get()` 方法
+- `get()` 内部会调用组件的 `render`
+
+`render` 执行过程中：
+- 模板里用到的响应式数据会被 **读取**
+- 读取数据时会触发属性的 `get`
+
+每一个响应式属性内部：
+- 都有一个 **Dep 实例**
+- Dep 的作用是：**收集依赖（watcher）**
+
+当属性 `get` 被触发时：
+- 如果发现全局存在 `Dep.target`
+- 就把当前 watcher 收集到这个属性的 dep 中
+- 同时 watcher 也会记录自己依赖了哪些 dep
+
+👉 **关系是多对多**
+- 一个属性（dep）可以被多个组件使用
+- 一个组件（watcher）也依赖多个属性
+
+当数据发生修改时：
+- 触发属性的 `set`
+- `set` 内部调用 `dep.notify()`
+- 通知所有依赖该属性的 watcher 重新执行
+
+watcher 被通知后：
+- 重新执行 `render`
+- 生成新的虚拟 DOM
+- 对比差异`patch()`并更新真实 DOM
+
+Vue 3 依赖收集
+- Vue3 中通过 Map 结构将属性和 effect 映射起来
+- 默认在初始化时会调用 render 函数，此时会触发属性依赖收集 track
+- 当属性变化时会触发找到对应的 effect 列表 依次执行 trigger
+
+Vue 3 的依赖收集流程在**思想层面和 Vue 2 完全一致**，只是实现方式不同。
+
+Vue 3 中不再使用 watcher，而是使用 **effect**。
+effect 的本质就是：**一段需要在数据变化时重新执行的函数**，用于驱动视图更新。
+
+组件渲染时：
+- 会创建一个 **渲染 effect（render effect）**
+- effect 内部保存的是组件的 **更新函数（component update fn）**
+- 该更新函数最终会调用 `render`
+
+effect 执行时：
+- 会先把当前 effect 放到一个 **全局变量**（`activeEffect`）
+- 然后执行更新函数，开始组件渲染
+
+render 执行过程中：
+- 会访问响应式数据
+- 触发响应式属性的 `get`
+
+在 Vue 3 中：
+- 不再通过 dep 实例收集依赖
+- 而是使用 **Map 结构进行依赖映射**
+  - key：对象 + 属性
+  - value：对应的 effect 集合
+
+当属性 `get` 触发时：
+- 调用 `track`
+- 如果当前存在 `activeEffect`
+- 就把 **属性与 effect 建立映射关系**
+- 完成依赖收集
+
+当数据发生修改时：
+- 触发属性的 `set`
+- 调用 `trigger`
+- 根据 Map 找到该属性对应的所有 effect
+- 依次执行这些 effect
+
+effect 重新执行后：
+- 再次调用更新函数
+- 再次执行 render
+- 完成视图更新
+
+Vue 3 的完整更新链路可以总结为：
+
+**effect 执行 → render 取值 → track 收集 effect → set 触发 trigger → effect 重新执行**
+
+对比结论：
+- Vue 2：`Dep + Watcher`
+- Vue 3：`Map + Effect`
+- 实现不同，但**核心思想完全一致**
+
+本质始终只有一句话：
+
+**把当前正在渲染的逻辑暴露到全局，取值时建立依赖，数据变化时重新执行渲染逻辑**
+
+## Vue.set 方法是如何实现的
+
+Vue 2 的响应式基于 `Object.defineProperty`：
+- 只能劫持**已存在的属性**
+- 新增对象属性 ❌ 不响应
+- 数组通过索引修改、修改 length ❌ 不响应
+
+因此 Vue 提供了 `Vue.set` 作为补救方案。
+
+`Vue.set(target, key, value)` 的核心流程：
+
+1. **参数校验**
+   - target 不能为空
+   - 不能是原始类型（string / number 等）
+   - 不能是只读对象
+   👉 不合法直接 return
+
+2. **判断是否为响应式对象**
+   - 通过 `target.__ob__` 判断
+   - 有 `__ob__` → 已被 Observer 观测
+   - 没有 `__ob__` → 非响应式对象，直接赋值即可
+
+3. **数组场景**
+   - 如果 target 是数组，并且 key 是索引
+   - 内部通过 `splice` 修改
+   - 因为数组的 7 个变异方法已被重写，可触发更新
+   - 👉 等价于：`arr.splice(index, 1, value)`
+
+4. **属性已存在**
+   - 如果 key 本来就在对象上
+   - 直接赋值即可
+   - 不需要使用 `Vue.set`
+
+5. **禁止修改根数据**
+   - 不允许通过 `vm.$data` / 根对象新增属性
+   - 原因：需要重新递归劫持，性能差
+   - Vue 明确不推荐这种用法
+
+6. **新增响应式属性**
+   - 使用 `defineReactive`
+   - 通过 `Object.defineProperty` 将新属性变为响应式
+   - 新属性会拥有自己的 dep
+
+7. **通知更新**
+   - 调用 `ob.dep.notify()`
+   - 触发相关 watcher 重新渲染组件
+
+## Vue中的 v-show 和 v-if 怎么理解
+
+基本概念
+- v-if 如果条件不成立不会渲染 所在节点的 dom 元素
+- v-show 只是切换所在节点的 显示 与 隐藏
+
+v-if 和 v-show 都用于控制元素显示，但**原理和使用场景完全不同**。
+
+v-if 的核心特点：
+- 条件不成立时，**元素不会被渲染**
+- 对应的 DOM 会被移除，实际渲染的是一个**注释节点**
+- 模板编译后会变成 **三元表达式**
+  - 条件成立：创建真实 DOM
+  - 条件不成立：创建 empty / 注释节点
+- 可以 **阻断内部代码执行**
+  - 条件为 false 时，内部取值、逻辑都不会执行
+
+适合场景：
+- 初始就能确定是否显示
+- 显示状态切换不频繁
+- 内部逻辑复杂，希望条件不满足时完全不执行
+
+v-show 的核心特点：
+- 元素 **始终会被渲染**
+- 只是通过样式控制显示 / 隐藏
+- 本质是切换 `display` 属性
+- 不会简单使用 `display: block / none`
+  - 会先保存元素原本的 display
+  - 隐藏时设为 `display: none`
+  - 显示时还原原始 display
+
+实现方式：
+- 模板编译后不会生成条件表达式
+- 会被编译成一个运行时指令（v-show）
+- 在指令的 bind / update 阶段控制 display
+
+适合场景：
+- 需要频繁切换显示状态
+- 不希望反复创建和销毁 DOM
