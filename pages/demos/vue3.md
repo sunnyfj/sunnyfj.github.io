@@ -1030,6 +1030,7 @@ const vm = new Vue({
   }
 })
 ```
+
 `computed`
 - 计算属性会创建一个计算属性watcher, 这个watcher(lazy:true) 不会立刻执行
 - 通过Object.defineProperty将计算属性定义到实例上
@@ -1252,8 +1253,10 @@ Vue2 中的行为
 - 性能较差 ❌
 
 官方建议
+
 - 将 `v-if` **提到外层元素**
-```vue
+
+```html
 <div v-if="show">
   <li v-for="item in list" :key="item.id"></li>
 </div>
@@ -1264,16 +1267,237 @@ Vue3 中的行为
 优先级
 - v-if 优先级高于 v-for
 - 编译阶段会：
- - 自动把 v-if 提升到外层（类似包一层 <template>）
+ - 自动把 v-if 提升到外层（类似包一层 template）
 
 ## 生命周期对比（Vue2 vs Vue3）
 
 生命周期本质：组件从创建 → 挂载 → 更新 → 销毁过程中，Vue 在固定时机同步调用的一组钩子函数，用来让开发者介入逻辑
 
 `vue2`
+
 <img src="@/assets/vue3.png" alt="vue3" />
 
 `vue3`
+
 <img src="@/assets/vue5.png" alt="vue5" />
 
 ## Vue 中 diff 算法原理
+
+`Diff 概念`
+vue 基于虚拟 DOM 做更新。diff 的核心就是比较两个虚拟节点的差异。Vue 的 diff 算法是平级比较，不考虑跨级比较的情况。内部采用深度递归的方式 + 双指针的方式进行比较。
+
+`Diff 比较流程` patch 函数
+- 先比较是否是相同节点 key tag
+- 相同节点比较属性，并复用老节点（将老的虚拟 dom 复用给新的虚拟节点 DOM）
+- 比较儿子节点, 考虑老节点和新节点儿子的情况
+ - 老的没儿子，现在有儿子。直接插入新的儿子
+ - 老的有儿子，新的没儿子。直接删除页面节点- 老的儿子是文本，新的儿子是文本，直接更新文本节点即可
+ - 老的儿子是一个列表，新的儿子也是一个列表 updateChildren
+- 优化比较：头头(尾部加入)、尾尾（头部加入）、头尾、尾头(updateChildren)
+- 比对查找进行复用
+ - (Vue3 中采用最长递增子序列来实现 diff 优化)。
+
+<img src="@/assets/vue6.png" alt="vue6" />
+
+## 说明Vue key 的作用
+
+`key 的概念`
+- key 的特殊 attribute 主要用在 Vue 的虚拟 DOM 算法，在新旧 nodes 对比时辨识 VNodes。如果不使用 key, Vue 会使用一种最大限度减少动态元素并且尽可能的尝试就地修改/复用相同类型元素的算法。
+- 当 Vue 正在更新使用 v-for 渲染的元素列表时，它默认使用“就地更新”的策略。如果数据项的顺序被改变，Vue 将不会移动 DOM 元素来匹配数据项的顺序，而是就地更新每个元素，并且确保它们在每个索引位置正确渲染
+
+`key 的作用`
+- Vue 在 patch 过程中通过 key 可以判断两个虚拟节点是否是相同节点。（可以复用老节点）
+- 无 key 会导致更新的时候出问题 (默认是undefined  index 作为 key 由于 index 是连续的 所以会导致复用错误进行更新节点  0 > 1  0 > 0完全复用错误 走了更新逻辑)
+- 尽量不要采用索引作为 key
+
+```html
+<!-- 没有key就会就地服用 value存在 有 key 就会删除 text 节点 添加 password 节点 -->
+<input type="text" v-if="show" key="text" />
+<input type="password" v-else key="password" />
+
+<!-- 如果没有key || index 就会就地复用， 有key比较 会根据key 复用 未变更的节点 不会进行操作  精准找到移动变化的元素进行更新 -->
+<ul>
+  <li v-for="item in list" :key="item.id">{{ item }}</li>
+</ul>
+
+```
+
+## Vue.use 作用
+
+`use 概念`
+安装 Vue.js 插件。如果插件是一个对象, 必须提供 install 方法。如果插件是一个函数, 它会被作为 install 方法。
+install 方法调用时, 会将 Vue 作为参数传入,这样插件中就不在需要依赖 Vue 了。
+
+`插件的功能`
+- 添加全局指令、全局过滤器、全局组件。
+- 通过全局混入来添加一些组件选项。
+- 添加 Vue 实例方法, 通过把它们添加到 Vue.prototype 上实现。
+
+```ts
+Vue.use = function (plugin: Function | object) {
+  // 插件缓存
+  const installedPlugins
+    = this._installedPlugins || (this._installedPlugins = [])
+  if (installedPlugins.includes(plugin)) {
+    // 如果已经有插件 直接返回
+    return this
+  }
+  // additional parameters
+  const args = toArray(arguments, 1) // 除了第一项其他的参数整合成数组
+  args.unshift(this) // 将Vue 放入到数组中
+  if (typeof plugin.install === 'function') {
+    // 调用install方法
+    plugin.install.apply(plugin, args)
+  }
+  else if (typeof plugin === 'function') {
+    // 直接调用方法
+    plugin.apply(null, args)
+  }
+  installedPlugins.push(plugin) // 缓存插件
+  return this
+}
+```
+
+## Vue.extend 作用
+
+Vue.extend 的作用是根据用户传入的组件配置创建一个继承自 Vue 的子类构造函数，本质上是 Vue 组件系统的底层实现方式。通过它可以把一个普通的组件选项对象转成可被 new 的组件类，子类会继承 Vue 的原型能力，在实例化时同样会执行完整的初始化流程并支持响应式、生命周期和 $mount。Vue 内部所有组件（包括全局组件）本质上都会经过 Vue.extend 处理，只是开发中一般不需要手动调用。它常用于手动创建并挂载组件或解析字符串模板（需编译版 Vue，性能较差）。
+
+在 Vue3 中该 API 被移除，改用 createApp、render、Teleport 等方式实现类似能力。
+
+## Vue组件data 为什么必须为函数
+
+- 根实例对象 data 可以是对象也可以是函数“单例”，不会产生数据污染情况
+- 组件实例对象 data 必须为函数，目的是为了防止多个组件实例对象之间共用一个data ，产生数据污染。所以需要通过工厂函数返回全新的 data 作为组件的数据源
+
+```js
+function Vue() {}
+
+Vue.extend = function (options) {
+  function Sub() {
+    // 会将data存起来
+    this.data = this.constructor.options.data
+  }
+  Sub.options = options
+  return Sub
+}
+let Child = Vue.extend({
+  data: { name: 'xxx' },
+})
+
+// 两个组件就是两个实例，希望数据互不干扰
+let child1 = new Child()
+let child2 = new Child()
+
+console.log(child1.data.name)
+child1.data.name = 'fff'
+console.log(child2.data.name)
+```
+
+Vue3 是从组件出发创建应用的，createApp 接收的就是一个组件，不再区分根实例和普通组件，因此 data 统一只能是函数。这样所有组件的数据模型保持一致，也避免了实例之间共享同一份数据的问题。
+
+## 函数组件的优势（针对Vue2）
+
+函数式组件的特性：无状态、无生命周期、无 this, 但是性能高。正常组件是一个类继承了 Vue, 函数式组件就是普通的函数, 没有 new 的过程。最终就是将返回的虚拟 DOM 变成真实 DOM替换对应的组件。
+
+- 函数式组件不会被记录在组件的父子关系中，
+- 在 Vue3 中因为所有的组件都不用 new 了, 所以在性能上没有了优势~。
+
+## Vue 中的过滤器了解吗？过滤器的应用场景有哪些？
+
+过滤器实质不改变原始数据，只是对数据进行加工处理后返回过滤后的数据再进行调用处理，也可以理解成纯函数。
+
+## v-once 的使用场景
+
+概念
+v-once是 Vue 中内置指令, 只渲染元素和组件一次。随后的重新渲染, 元素/组件及其所有的子节点将被视为静态内容并跳过。这可以用于优化更新性能。
+
+v-once 使用场景
+- 单独元素
+- 外层元素
+- 组件
+- 列表渲染中 v-for 会把 v-once 指令作用到外层元素上
+
+本质在首次渲染的时候rander函数会缓存 _cache 缓存对象(虚拟节点), 后续渲染会直接从缓存中取。
+
+- 只要标记过 v-once, 后续动态数据变化不会触发组件更新
+- vue3.2之后，新增 v-memo 指令, 通过依赖列表的方式控制页面渲染
+
+```html
+<!-- 我们可以告诉他 哪些数据变化了 通过列表形式给到 来控制重新渲染 -->
+<div v-memo="[val1, val2]">
+    <div v-for="item in list" :key="item.id">{{ item }}</div>
+</div>
+```
+
+## Vue.mixin 使用场景和原理
+
+Vue.mixin 的作用是 **复用和扩展组件逻辑**，分为两种方式：
+
+- 全局混入：影响所有组件（常用于插件）
+- 局部混入：复用某一类组件的公共逻辑
+
+全局混入常见使用场景：
+- 插件开发（如 Vue Router、Vuex）
+- 通过生命周期钩子（如 beforeCreate）注入全局属性
+- 例如：`this.$router`、`this.$store`
+
+特点：
+- 一次混入，所有组件生效
+- 使用方便，但**影响范围大**
+
+局部混入的作用：
+- 抽离组件之间的公共逻辑
+- 在组件中通过 `mixins: []` 引入
+- 常用于复用 data、methods、生命周期等
+
+Mixin 的核心原理：**选项合并（mergeOptions）**
+- 全局 mixin 会合并到 Vue.options
+- 组件初始化时：
+  - 父选项（全局 / mixin）
+  - 子选项（组件自身）
+  - 通过 mergeOptions 合并
+
+内部使用的是 **策略模式**
+- 不同配置项采用不同合并策略
+
+常见合并策略总结：
+
+- data
+  - 合并成一个新函数
+  - 执行父 data + 子 data
+  - 返回结果进行深度合并
+  - 子优先
+
+- methods / props / inject / computed
+  - 对象合并
+  - 子覆盖父（就近原则）
+
+- 生命周期钩子（created / mounted 等）
+  - 合并成数组
+  - 按顺序依次执行（先父后子）
+
+- watch
+  - 合并成数组
+  - 所有 watcher 都会执行
+
+- components / directives / filters
+  - 通过原型链合并
+  - 子组件找不到时，可沿原型链访问父组件定义
+
+Mixin 的问题与缺陷（常见面试点）：
+
+- 命名冲突
+  - data / methods 同名时易被覆盖
+- 数据来源不清晰
+  - 无法快速判断属性来自哪个 mixin
+- 增加心智负担
+  - 组件复杂度随 mixin 增多而上升
+
+为什么 Vue 3 不推荐 mixin？
+
+- Vue 3 使用 Composition API
+- 通过函数方式复用逻辑（useXXX）
+- 优点：
+  - 无命名冲突
+  - 数据来源清晰
+  - 逻辑可组合、可拆分

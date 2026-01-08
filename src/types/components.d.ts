@@ -14,10 +14,7 @@ declare module 'vue' {
   export interface GlobalComponents {
     ArtDots: typeof import('./../components/ArtDots.vue')['default']
     ArtPlum: typeof import('./../components/ArtPlum.vue')['default']
-    bicycle: typeof import('./../components/svg/ bicycle.vue')['default']
     Bicycle: typeof import('./../components/svg/Bicycle.vue')['default']
-    Carousel: typeof import('./../components/Carousel.vue')['default']
-    Carousel1111: typeof import('./../components/Carousel1111.vue')['default']
     CarouselCps: typeof import('./../components/CarouselCps.vue')['default']
     Confetti: typeof import('./../components/js/Confetti.vue')['default']
     Flip: typeof import('./../components/css/Flip.vue')['default']
@@ -27,7 +24,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     ToggleTheme: typeof import('./../components/ToggleTheme.vue')['default']
-    Zxc: typeof import('./../components/svg/zxc.vue')['default']
   }
 }
 
@@ -35,10 +31,7 @@ declare module 'vue' {
 declare global {
   const ArtDots: typeof import('./../components/ArtDots.vue')['default']
   const ArtPlum: typeof import('./../components/ArtPlum.vue')['default']
-  const bicycle: typeof import('./../components/svg/ bicycle.vue')['default']
   const Bicycle: typeof import('./../components/svg/Bicycle.vue')['default']
-  const Carousel: typeof import('./../components/Carousel.vue')['default']
-  const Carousel1111: typeof import('./../components/Carousel1111.vue')['default']
   const CarouselCps: typeof import('./../components/CarouselCps.vue')['default']
   const Confetti: typeof import('./../components/js/Confetti.vue')['default']
   const Flip: typeof import('./../components/css/Flip.vue')['default']
@@ -48,5 +41,4 @@ declare global {
   const RouterLink: typeof import('vue-router')['RouterLink']
   const RouterView: typeof import('vue-router')['RouterView']
   const ToggleTheme: typeof import('./../components/ToggleTheme.vue')['default']
-  const Zxc: typeof import('./../components/svg/zxc.vue')['default']
 }
