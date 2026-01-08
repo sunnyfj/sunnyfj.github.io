@@ -74,6 +74,8 @@ include
 
 exclude
 
+parse
+
 lru 缓存 算法 最近最少使用算法
 
 没有key的问题？
@@ -953,3 +955,325 @@ v-show 的核心特点：
 适合场景：
 - 需要频繁切换显示状态
 - 不希望反复创建和销毁 DOM
+
+## watch & computed
+
+Vue2 中有三种 watcher (渲染 watcher、计算属性 watcher、用户 watcher)
+
+Vue3 中有三种 effect (渲染 effect、计算属性 effect、 用户 effect)
+
+`computed`
+- 计算属性仅当用户取值时才会执行对应的方法。
+- computed属性是具备缓存的,依赖的值不发生变化,对其取值时计算属性方法不会重新执行。
+- 计算属性可以简化模板中复杂表达式。
+- 计算属性中不支持异步逻辑。
+- computed 属性是可以在模板中使用的。
+
+`watch`
+- watch 则是监控值的变化,当值发生变化时调用对应的回调函数。经常用于监控某个值的变化,进行一些操作。(异步要注意竞态问题)
+- vue3 提供了 onCleanup 函数,让用户更加方便使用也解决了清理问题。
+
+`竞态问题`
+
+概念：
+- 多个异步操作被连续触发
+- 后发起的操作可能先完成
+- 旧结果覆盖新结果，导致状态错误
+
+Vue2 中的处理方式：
+
+- Vue2 没有内建竞态处理机制
+- 常见做法：
+  - 使用变量标识当前请求（如 requestId）
+  - 在回调中判断是否为最新请求
+  - 或手动取消请求（如 axios cancelToken）
+- 竞态控制主要依赖开发者自行实现
+
+Vue3 中的处理方式：
+
+- watch / watchEffect 提供 onCleanup
+- 每次副作用重新执行前，自动调用上一次的 cleanup
+- 用于让旧的异步操作“失效”，（onCleanup 不是取消异步，而是 **防止过期异步结果生效**）
+
+```js
+const vm = new Vue({
+  template: `
+    <div>
+        <p>fullName: {{ fullName }}</p>
+    </div>
+  `,
+  data() {
+    return {
+      firstName: 'fff',
+      lastName: 'jjj',
+    }
+  },
+  computed: {
+    // 每一个计算属性内部维护一个 dirty 属性，默认值为 true
+    // 当计算属性依赖的响应式数据发生变化时，会将 dirty 设置为 true
+    // 当计算属性被访问时，如果 dirty 为 true，会重新计算值并将 dirty 设置为 false
+    // 如果 dirty 为 false，会直接返回缓存的值
+    fullName() {
+      return this.firstName + this.lastName
+    }
+  },
+  watch: {
+    fullName(newVal, oldVal) {
+      console.log('fullName 变化了', newVal, oldVal)
+    }
+  },
+  methods: {
+    changeName() {
+      // 当计算属性依赖的响应式数据发生变化时，会将 dirty 设置为 true
+      this.firstName = 'fff2'
+    }
+  }
+})
+```
+`computed`
+- 计算属性会创建一个计算属性watcher, 这个watcher(lazy:true) 不会立刻执行
+- 通过Object.defineProperty将计算属性定义到实例上
+- 当用户取值时会触发getter, 拿到计算属性对应的watcher, 看dirty是否为true, 如果为true则求值
+- 并且让计算属性watcher中依赖的属性收集最外层的渲染watcher, 可以做到依赖的属性变化了, 触发计算属性更新dirty并且可以触发页面更新
+- 如果依赖的值没有发生变化, 则采用缓存
+
+```js
+// vue3
+import { computed, reactive, watch } from 'vue'
+
+const state = reactive({
+  firstName: 'fff',
+  lastName: 'jjj',
+})
+
+const fullName = computed(() => {
+  // 依赖的值变化后，会通知计算属性 effect 更新 dirty，并且计算属性会触发自己收集的渲染 effect 执行
+  return state.firstName + state.lastName
+})
+
+watch(fullName, (newVal, oldVal) => {
+  console.log('fullName 变化了', newVal, oldVal)
+})
+
+function render() {
+  // 和vue2 不同的是, 这个计算属性会收集当前组件的渲染产生的 effect
+  return `
+    <div>
+        <p>fullName: ${fullName.value}</p>
+    </div>
+  `
+}
+```
+
+## ref 和 reactive 区别
+
+基本概念
+-ref 和 reactive 是 Vue3 数据响应式中非常重要的两个概念。
+- reactive 用于处理对象类型的数据响应式。底层采用的是 new Proxy(), (包括es6 中的 Map, Set 等数据结构)
+ - 解构会丢失响应式
+- ref 通常用于处理单值的响应式, ref 主要解决原始值的响应式问题。 底层采用的是 Object.defineProperty()实现。
+ - 任意类型都可以使用ref 响应式处理,
+ - (RefImpl 类 的 get set方法处理，实际编译之后会调用 Object.defineProperty() 方法)
+ - 如果传的是对象类型, 会转为 reactive 响应式处理（toReactive 方法）
+ - reactive中部分属性是ref时，取值会自动拆包 不需要.value
+
+源码实现
+[reactive](https://github.com/vuejs/core/blob/main/packages/reactivity/src/reactive.ts)
+[ref](https://github.com/vuejs/core/blob/main/packages/reactivity/src/ref.ts)
+
+## watch & watchEffect 区别
+
+- watchEffect 立即运行一个函数,然后被动地追踪它的依赖,当这些依赖改变时重新执行该函数。
+- watch 侦测一个或多个响应式数据源并在数据源变化时调用一个回调函数。
+
+内部都是通过 doWatch 方法实现的。 不同的是 watchEffect 没有回调函数, 只有 getter 函数。
+
+```js
+const effect = new ReactiveEffect(getter, scheduler)
+effect.run()
+
+// getter 函数
+watchEffect(() => {
+  app.innerHTML = state.name // 数据变化后,会调用scheduler内部会再次触发effect.run()重新运行getter
+})
+
+// 1.getter 函数 2.cb函数
+watch(
+  () => state.name, // 数据变化后,会调用scheduler,内部会调用cb
+  (newVal, oOldval) => {}
+)
+```
+
+[watch](https://github.com/vuejs/core/blob/main/packages/reactivity/src/watch.ts)
+
+## 如何将 template 转换成 render 函数
+
+Vue 中含有模版编译的功能, 它的主要作用是将用户编写的 template 编译为 js 中可执行的 render函数。
+
+- 将 template 模板 parse 方法 转换成 ast 语法树 - parserHTML
+- 对静态语法做静态标记 - markup diff来做优化的 静态节点跳过diff操作
+- 重新生成代码 - code generate 方法 生成 render 函数
+
+模板编译的过程
+[演示编译 - 抽象语法树](https://astexplorer.net/)
+- Vue3 中的模板转化, 做了更多的优化操作。Vue2 仅仅是标记了静态节点而已
+
+[vue3 代码](https://github.com/vuejs/core/blob/main/packages/vue/src/index.ts)
+
+## new Vue() 过程中究竟做了什么
+
+`vue2`
+- 在 new Vue 的时候 内部会进行初始化操作。
+- 内部会初始化组件绑定的事件, 初始化组件的父子关系(initLifecycle) children $root
+- 初始化响应式数据 data、computed、props、watch、method。 同时也初始化了 provide 和 inject 方法。内部会对数据进行劫持 对象用 defineProperty，数组采用方法重写。
+- 在看一下用户是否传入了 el 属性和 template或者 render。render 的优先级更高 如果用户写的 是template 会做模板编译 (三部曲) 最终就拿到了 render 函数
+- 内部挂载的时候会产生一个 watcher, 会调用 render 函数会触发依赖收集。内部还会给所有的响应式数据增加 dep属性, 让属性记录当前的 watcher (用户后续修改的时候可以触发 watcher 重新渲染)
+- vue 更新的时候采用虚拟 DOM 的方式进行 diff算法更新。
+
+Vue2：new Vue() 过程做了什么
+
+1. 合并配置
+- 合并 options（data、methods、computed、watch、生命周期等）
+- 处理 mixin、extend 产生的配置
+
+2. 初始化实例
+- 初始化生命周期（$parent / $children / flags）
+- 初始化事件（$on / $emit）
+- 初始化渲染相关属性（$slots / $attrs）
+
+3. 初始化响应式数据
+- data → Object.defineProperty 劫持
+- computed / watch 创建 watcher
+- 每个组件只有一个「渲染 watcher」
+
+4. 挂载阶段（如果传了 el）
+- 调用 $mount
+- 创建渲染 watcher
+- 执行 render 函数
+- 生成虚拟 DOM
+- patch 成真实 DOM
+
+5. 后续更新
+- 数据变化 → 触发 dep.notify
+- watcher 重新执行
+- 重新 render + diff + patch
+
+Vue3：createApp() 过程做了什么
+
+1. createApp(rootComponent)
+- 创建应用实例（Application）
+- 不再直接创建组件实例
+- 全局配置与组件实例解耦
+
+2. app.mount(container)
+- 创建根组件实例
+- 创建渲染 effect（render effect）
+- 执行 render 函数
+- 基于 Proxy 的响应式收集依赖
+
+3. 响应式系统
+- Proxy + Reflect
+- effect 代替 watcher
+- 使用 Map 结构管理依赖关系
+
+4. 更新流程
+- 数据变化 → trigger
+- 触发对应 effect
+- 重新执行 render
+- 基于虚拟 DOM + block tree 更新
+
+核心区别总结
+
+Vue2：
+- new Vue = 应用 + 根组件
+- Object.defineProperty
+- watcher + dep
+- 配置和实例强耦合
+
+Vue3：
+- createApp ≠ 创建组件
+- Proxy 响应式
+- effect + Map
+- 应用实例与组件实例分离
+- 更利于多应用、插件、tree-shaking
+
+总结
+
+Vue2 中 new Vue 会完成实例创建、响应式初始化和挂载；
+Vue3 中 createApp 只创建应用上下文，真正的组件创建与渲染发生在 mount 阶段，响应式由 effect 驱动。
+
+## Vue observable 了解
+
+Vue.observable 是 Vue 2.6 新增的一个 API
+作用：把**普通对象转换成响应式对象**
+
+原理：
+- 内部直接调用 observe
+- 基于 Object.defineProperty 做数据劫持
+- 返回的对象具备完整响应式能力
+
+使用场景：
+- 创建一个**全局共享的响应式对象**
+- 用于简单场景的组件通信：
+  - 父子组件
+  - 跨级组件
+  - 兄弟组件
+- 类似一个“轻量版状态管理”
+
+缺点：
+- 数据是**共享的、可随意修改**
+- 缺乏规范和约束
+- 必须引入整个 Vue（无法单独使用响应式模块）
+
+与 Vue3 的关系：
+- Vue3 已移除 Vue.observable
+- 使用 reactive() 直接创建响应式对象
+- 响应式系统可独立使用（无需创建应用）vue3是基于 monorepo 架构，响应式系统是独立的模块，不依赖于应用实例。
+
+## v-if 和 v-for 优先级对比（Vue2 vs Vue3）
+
+核心结论
+- **避免在同一元素上同时使用 v-if 和 v-for**
+- 两者在 Vue2 和 Vue3 中**优先级不同，行为也不同**
+- 推荐做法：**用计算属性先处理数据，再用 v-for 渲染**
+
+Vue2 中的行为
+
+优先级
+- **v-for 优先级高于 v-if**
+- 执行顺序：
+  **先循环 → 再判断条件**
+
+表现
+- 即使条件不成立，也会：
+  - 先遍历整个数组
+  - 再为每一项判断 v-if
+  - 不满足时返回**注释节点**
+- 性能较差 ❌
+
+官方建议
+- 将 `v-if` **提到外层元素**
+```vue
+<div v-if="show">
+  <li v-for="item in list" :key="item.id"></li>
+</div>
+```
+
+Vue3 中的行为
+
+优先级
+- v-if 优先级高于 v-for
+- 编译阶段会：
+ - 自动把 v-if 提升到外层（类似包一层 <template>）
+
+## 生命周期对比（Vue2 vs Vue3）
+
+生命周期本质：组件从创建 → 挂载 → 更新 → 销毁过程中，Vue 在固定时机同步调用的一组钩子函数，用来让开发者介入逻辑
+
+`vue2`
+<img src="@/assets/vue3.png" alt="vue3" />
+
+`vue3`
+<img src="@/assets/vue5.png" alt="vue5" />
+
+## Vue 中 diff 算法原理
