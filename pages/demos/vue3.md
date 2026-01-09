@@ -1788,3 +1788,212 @@ Vue 2 vs Vue 3 差异
     * **Vue 3**：升级为了 **Map** 对象 (`instance.cache = new Map()`)。
 * **存储内容**：Key 通常是组件的 ID 或用户定义的 Key，Value 是该组件的 **VNode（虚拟节点）**。VNode 中持有 `componentInstance`（Vue 2）或 `component`（Vue 3），即**真实的组件实例**。
 * **DOM 的去向**：当组件被切换时，它的真实 DOM 会被保存在缓存实例的属性中，并从父容器中移除（但并未销毁），等待下次被重新插入。 移动到了未渲染的空div中。
+
+## Vue 自定义指令核心原理与应用
+
+* **核心本质**：自定义指令是 Vue 提供的 **DOM 操作逻辑复用机制**。当开发中需要对普通 DOM 元素进行底层操作，且该逻辑在多个地方重复时，应封装为指令。
+* **常用场景**：
+    * **权限控制**：`v-has`，判断当前用户是否有权操作该 DOM，无权则将其移除。
+    * **图片懒加载**：`v-lazy`，根据窗口滚动位置动态替换图片的 `src` 属性。
+    * **交互封装**：`v-click-outside`（点击外部隐藏）、`v-drag`（拖拽）、`v-debounce`（防抖）。
+    * **表单增强**：`v-focus`（自动获取焦点）。
+
+生命周期钩子对比
+指令的本质是在 DOM 渲染的不同阶段注入回调函数。
+
+| 阶段 | Vue 2 钩子 | Vue 3 钩子 | 触发时机 |
+| :--- | :--- | :--- | :--- |
+| **初始化** | `bind` | `beforeMount` | 指令第一次绑定到元素时触发（初始化设置） |
+| **挂载** | `inserted` | `mounted` | 绑定元素插入到父节点时触发（可保证 DOM 存在） |
+| **更新前** | `update` | `beforeUpdate` | 组件 VNode 更新时，但其子 VNode 可能尚未更新 |
+| **更新后** | `componentUpdated` | `updated` | 指令所在组件及其子节点全部更新后触发 |
+| **销毁** | `unbind` | `unmounted` | 指令与元素解绑、元素被从 DOM 卸载时触发 |
+
+实现原理（源码层面）
+* **VNode 存储**：在编译阶段，模板中的指令会被解析并存储在 VNode 的 `directives` 属性数组中。
+* **Hooks 调用**：
+    * **Vue 2**：在 `patch` 过程中，通过 `invokeCreateHooks` 等方法循环调用指令模块提供的 `create`、`update` 等钩子，最终映射到用户写的 `bind` 或 `inserted`。
+    * **Vue 3**：逻辑更扁平，在渲染器（Renderer）执行 `mountElement` 或 `patchElement` 时，通过 `invokeDirectiveHook` 查找指令定义并执行对应的生命周期函数。
+* **解绑处理**：在组件卸载时，Vue 会自动触发 `unmounted`（Vue 3）或 `unbind`（Vue 2），用于清除事件监听（如 `window.addEventListener`）防止内存泄漏。
+
+## Vue 中使用了哪些设计模式?
+- 单例模式 - 单例模式就是整个程序有且仅有一个实例 Vuex 中的store
+- 工厂模式 - 传入参数即可创建实例 (createElement)
+- 发布订阅模式 - 订阅者把自己想订阅的事件注册到调度中心, 当该事件触发时候, 发布者发布该事件到调度中心,由调度中心统一调度订阅者注册到调度中心的处理代码。($on / $emit、EventBus。)
+- 观察者模式 - 数据属性通过 Dep（收集者）收集 Watcher（订阅者）。当数据变化时，Dep 自动通知所有 Watcher 触发更新，实现自动化的响应机制,`响应式原理`
+- 代理模式 - 代理模式给某一个对象提供一个代理对象,并由代理对象控制对原对象的引用。
+- 装饰模式 - Vue2 装饰器的用法 （对功能进行增强 @）
+- 中介者模式 - 中介者是一个行为设计 模式通过提供一个统一的接口让系统的不同部分进行通信。 Vuex
+- 策略模式 - 策略模式指对象有某个行为,但是在不同的场景中,该行为有不同的实现方案。 mergeOptions
+- 外观模式 - 提供了统一的接口,用来访问子系统中的一群接口。
+......
+
+## Vue 中的性能优化有哪些？
+- 数据层级不易过深,合理设置响应式数据（vue2递归代理）
+- 通过 Object.freeze()方法冻结属性 (不需要代理的数据)
+- 使用数据时缓存值的结果,不频繁取值。
+- 合理设置 Key 属性
+- v-show 和 v-if 的选取
+- 控制组件粒度 -> Vue 采用组件级更新 可以缩小 Diff 范围，确保数据变化时只重新渲染受影响的组件。
+- 采用函数式组件(vue2) -> 函数式组件开销低- 采用异步组件 -> 借助webpack分包的能力
+- 使用keep-alive缓存组件v-once v-memo
+- 分页、虚拟滚动、
+- 时间分片（requestAnimationFrame）将大量任务分批执行，避免长时间占用主线程导致页面卡死
+- 防抖（debounce）和节流（throttle）函数，控制事件触发频率
+- 按需引入三方库
+- 插件销毁处理
+- 图片资源压缩与 WebP 化：（结合指令或组件，根据浏览器支持情况动态加载 WebP 格式图片）
+- 开启 Gzip 或 Brotli 压缩
+- CDN 加速 （将不变的依赖库（如 vue, vue-router, axios）通过 externals 排除出打包文件，直接使用 CDN 链接引入，减少服务器带宽压力并利用浏览器缓存。）
+- 浏览器资源加载策略：defer, async, preload, prefetch
+
+`脚本执行策略 针对 script`
+
+| 属性 | 加载方式 | 执行时机 | 是否阻塞解析 | 顺序保证 |
+| :--- | :--- | :--- | :--- | :--- |
+| **默认** | 同步下载 | 下载完立即执行 | **是** | 按出现顺序 |
+| **defer** | 异步下载 | **HTML 解析完成后** | 否 | 按出现顺序 |
+| **async** | 异步下载 | **下载完成后立即执行** | **是** (执行时阻塞) | **无序** (谁快谁执行) |
+
+* **defer 场景**：Vue/React 等框架核心脚本、依赖 DOM 的逻辑。
+* **async 场景**：第三方统计（百度统计、Google Analytics）、广告插件等独立脚本。
+
+`资源预取策略 针对 link`
+
+| 属性 | 优先级 | 下载时机 | 适用范围 | 目的 |
+| :--- | :--- | :--- | :--- | :--- |
+| **preload** | **高** | 立即开始 | 当前页面必用的资源 | 提升首屏关键资源加载速度 |
+| **prefetch** | **低** | 浏览器空闲时 | 未来页面可能用的资源 | 提升后续页面跳转的体验 |
+
+* **preload 场景**：字体文件（避免文字闪烁）、首屏大图、核心 CSS/JS。
+* **prefetch 场景**：Vue 路由懒加载的分包（Async Chunk）、下一页的预加载。
+
+## 单页应用首屏加载速度慢的怎么解决？
+- 使用路由懒加载、异步组件，实现组件拆分，减少入口文件体积大小（优化体验骨架屏）
+- 抽离公共代码，采用 splitChunks 进行代码分割。
+- 组件加载采用按需加载的方式。
+- 静态资源缓存，采用 HTTP 缓存（强制缓存、对比缓存）、使用 localStorage实现缓存资源。
+- 图片资源的压缩，雪碧图、对小图片进行 base64 减少 http 请求。
+- 打包时开启 gzip 压缩处理 compression-webpack-plugin 插件
+- 静态资源采用 CDN 提速。终极的手段
+- 使用 SSR 对首屏做服务端渲染。
+
+体积、传输、响应、体验 等角度
+
+## Vue 项目中有封装过 axios 吗？主要是封装哪方面的？
+- 设置请求超时时间。
+- 根据项目环境设置请求路径。
+- 设置请求拦截，自动添加 Token。
+- 设置响应拦截，对响应的状态码或者数据进行格式化。
+- 增添请求队列，实现 loading 效果。
+- 维护取消请求 token，在页面切换时通过导航守卫可以取消上个页面中正在发送的请求。
+- 自动重试机制 (Request Retry) ？
+- 请求重复拦截？
+- 无感刷新 Token
+- 异常自动监控与上报
+- 统一数据转换 (Data Transformer)（BigInt）
+- Axios 响应体泛型封装 (TypeScript) Result
+
+## vue 要做权限管理该怎么做？如果控制到按钮级别的权限怎么做？
+`常见权限控制`
+- 登录鉴权：用户登录后返回 Token，前端将 Token 保存到本地，作为用户登录的凭证，每次发送请求时会携带 Token，后端会对 Token 进行验证。当页面刷新时我们可以使用 Token 来获得用户权限。
+- 访问权限：根据用户是否登录判断能否访问某个页面，通过路由守卫实现判断用户是否有此权限。
+- 页面权限：前端配置的路由分为两部分 “通用路由配置” 和 “需要权限的路由配置”。在权限路由中增加访问权限 meta(备注)。用户登录后可得到对应的权限列表，通过权限列表筛查出对应符合的路由信息，最后通过 addRoutes 方法，动态添加路由。
+- 按钮权限：按钮权限一般采用自定义指令实现，当用户登录时后端会返回对应的按钮权限，在按钮上使用此指令，指令内部会判断用户是否有此按钮权限，如果没有则会移除按钮。
+
+## Vue-Router 几种模式的区别?
+- Vue-Router 有三种模式 hash、history、abstract(Memory)
+- abstract模式是在不支持浏览器 API 环境使用, 不依赖于浏览器历史
+- hash 模式: hash + `popState`/`hashChange`兼容性好但是不够美观, hash 服务端无法获取。不利于 seo 优化
+- history 模式: historyApi+ popState美观, 刷新会出现 404
+
+`hash 不会真正发送请求，history 会发送请求 所以/xxx 服务器没有对应路由处理 所以会返回 404 错误`
+
+[解决方案](https://router.vuejs.org/zh/guide/essentials/history-mode.html#%E6%9C%8D%E5%8A%A1%E5%99%A8%E9%85%8D%E7%BD%AE%E7%A4%BA%E4%BE%8B)
+
+思路：
+- 配置服务器，当请求不存在的路由时，返回 index.html 页面。
+- 前端路由捕获 404 错误，跳转到 404 页面。相当于客户端自己兜底
+
+## Vue3 中 CompositionAPI 的优势是?
+- 在 Vue2 中采用的是 OptionsAPI, 用户提供的 data、props、methods、computed、watch 等属性 (用户编写复杂业务逻辑会出现反复横跳问题)
+- Vue2 中所有的属性都是通过 this 访问, this 存在指向明确问题.
+- Vue2 中很多未使用方法或属性依旧会被打包，并且所有全局 API 都在 Vue 对象上公开。Composition API 对 tree-shaking 更加友好, 代码也更容易压缩。
+- 组件逻辑共享问题, Vue2 采用 mixins实现组件之间的逻辑共享; 但是会有数据来源不明确, 命名冲突等问题。Vue3 采用 CompositionAPI 提取公共逻辑非常方便
+- 简单的组件仍然可以采用 OptionsAPI 进行编写, compositionAPI 在复杂的逻辑中有着明显的优势~。
+
+如何选择？
+* **小型/简单组件**：Options API 依然可用，结构清晰简单。
+* **大型/复杂业务**：必须首选 **Composition API**，配合 `<script setup>` 语法糖，能显著降低维护难度并提升运行性能。
+
+## Vue3 有了解过吗？能说说跟 Vue2 的区别吗？
+- Vue3.0 更注重模块上的拆分，在 2.0 中无法单独使用部分模块。需要引入完整的 Vuejs(例如只想使用使用响应式部分,但是需要引入完整的 Vuejs),Vue3 中的模块之间耦合度低,模块可以独立使用。拆分模块
+- Vue2 中很多方法挂载到了实例中导致没有使用也会被打包（还有很多组件也是一样）。通过构建工具 Tree-shaking 机制实现按需引入，减少用户打包后体积。重写 API
+- Vue3 允许自定义渲染器，扩展能力强。不会发生以前的事情，改写 Vue 源码改造渲染方式。扩展更方便
+- 在 Vue2 的时候使用 defineProperty 来进行数据的劫持，需要对属性进行重写添加 getter 及 setter 性能差。
+- 当新增属性和删除属性时无法监控变化。需要通过 delete 实现
+- 数组不采用 defineProperty 来进行劫持 （浪费性能，对所有索引进行劫持会造成性能浪费）需要对数组单独进行处理
+- Diff 算法也进行了重写。
+- Vue3 模板编译优化，采用 PatchFlags 优化动态节点，采用BlockTree 进行靶向更新等
+- 相比 Vue2 来说 Vue3 新增了很多新的特性。
+
+## Vue3 中模板编译优化
+
+```ts
+export const enum PatchFlags {
+  TEXT = 1, // 动态文本节点
+  CLASS = 1 << 1, // 动态class
+  STYLE = 1 << 2, // 动态style
+  PROPS = 1 << 3, // 除了class/style动态属性
+  FULL_PROPS = 1 << 4, // 需要完整diff
+  HYDRATE_EVENTS = 1 << 5, // 挂载过事件的
+  STABLE_FRAGMENT = 1 << 6, // 稳定序列，子节点顺序不会发生变化
+  KEYED_FRAGMENT = 1 << 7, // 子节点有key的fragment
+  UNKEYED_FRAGMENT = 1 << 8, // 子节点没有key的fragment
+  NEED_PATCH = 1 << 9, // 进行props比较、ref比较
+  DYNAMIC_SLOTS = 1 << 10, // 动态插槽
+  DEV_ROOT_FRAGMENT = 1 << 11,
+  HOISTED = -1, // 表示静态节点，内容变化，不比较儿子
+  BAIL = -2 // 表示diff算法应该结束
+}
+```
+
+`Patch Flags (静态标记)`
+原理：在编译阶段，Vue 会分析模板中的动态内容，并根据其类型（文本、类名、样式、属性等）打上特定的 **Patch Flag**（数字标记）。
+优化点：
+    靶向更新**：Diff 算法不再全量比对，而是根据标记“按需比对”。例如：标记为 `1` (TEXT)，Diff 时只比对文本内容，跳过 Class 和 Style 的检查。
+    位运算效率**：内部使用位运算（如 `flag & PatchFlags.CLASS`）进行快速判断，极大地提升了运行时性能。
+
+`突破层级：Block Tree (块级树)`
+背景：传统的 Diff 是递归遍历整棵树，即使只有深层的一个节点是动态的，也要经过所有父级的比对。
+核心机制：
+    Block (块)：Vue 将具有动态结构的指令（如 `v-if`, `v-for`）或根节点定义为 Block。
+    Dynamic Children 收集：每个 Block 会“扁平化”地收集其内部所有的动态子节点，存入 `dynamicChildren` 数组。
+优化点：更新时，Diff 算法直接遍历 `dynamicChildren` 数组，完全**忽略 DOM 层级**。无论嵌套多深，动态节点都能被秒速定位。
+
+`结构不稳定性处理`
+v-if：由于 `v-if` 会改变 DOM 结构，它会作为一个“子 Block”，确保结构变化时能触发完整的替换逻辑。
+v-for：
+    不稳定序列：列表长度变化时，无法通过扁平化数组简单比对，会回退到全量 Diff 确保准确性。
+    稳定序列：如果是固定长度的循环，依然可以享受 Block 带来的靶向更新。
+
+`内存与计算优化`
+- 静态提升 (Static Hoisting)：
+    将模板中的静态节点、静态属性提升到 `render` 函数之外。
+    结果：这些节点只在初始化时创建一次，后续重新渲染时直接复用同一个 VNode，避免了重复创建对象的内存开销。
+- 预字符串化 (Static Content Stringify)：
+    当遇到大量连续的静态节点（超过 20 个）时，编译器将其直接编译为一个**纯字符串**，通过 `innerHTML` 一次性插入。
+- 缓存事件处理函数 (Cache Handlers)**：
+    自动缓存 `onXxx` 事件。避免了每次渲染都创建新的匿名函数，减少了子组件因 Props 变化（函数引用变化）而导致的不必要重渲染。
+
+## 你知道哪些Vue3新特性
+[Vue3 迁移指南](https://v3-migration.vuejs.org/zh/)
+- 组合式 API*
+- 单文件组件中的组合式 API 语法糖 (script setup)
+- Teleport 组件
+- Fragments 片段
+- Emits 组件选项**
+- 来自 @vue/runtime-core 的 createRenderer API 用来创建自定义渲染函数
+- 单文件组件中的状态驱动的 CSS 变量 (style 中的 v-bind)
+- SFC style scoped 新增全局规则和针对插槽内容的规则
+- Suspense 实验性, 用于处理异步组件的加载状态
