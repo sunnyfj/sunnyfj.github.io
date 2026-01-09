@@ -1664,3 +1664,127 @@ vue3 中.sync 语法被移除。
 ```js
 Sub.options.components[name] = Sub // 子组件会通过name属性, 将自己也注册到组件中
 ```
+
+## Vue 常用的修饰符有哪些有什么应用场景？
+表单修饰符 lazy、trim、 number
+事件修饰符stop、prevent、self、once、capture、passive、native
+鼠标按键修饰符 left、right、middle
+键值修饰符 对 keyCode 处理
+.sync 修饰符
+
+## Vue 中异步组件的作用及原理
+
+`异步组件概念`
+Vue 允许你以一个工厂函数的方式定义你的组件, 这个工厂函数会异步解析你的组件定义。推荐的做法是将异步组件和 webpack 的 code-splitting 功能一起配合使用。
+
+异步组件的写法
+
+`回调写法`
+
+```js
+{
+  components: {
+    "my-component": (resolve, reject) => {
+      setTimeout(function () {resolve({
+          render(h){
+            return h('div','hello')
+          },
+        });
+      }, 1000);
+    },
+  },
+}
+
+```
+
+`Promise 写法`
+```js
+{
+  components: {
+    "my-component": () => import(/* webpackChunkName:"B4" */ "./components/B4.vue"),
+  },
+}
+```
+
+`对象写法`
+```js
+function AsyncComponent() {
+  return {
+  // 需要加载的组件（应该是一个 'Promise' 对象）
+    component: import('./MyComponent.vue'),
+    // 异步组件加载时使用的组件
+    loading: LoadingComponent,
+    // 加载失败时使用的组件
+    error: ErrorComponent,
+    // 展示加载时组件的延时时间。默认值是 200 (毫秒)
+    delay: 200,
+    // 如果提供了超时时间且组件加载也超时了，则使用加载失败时使用的组件。默认值是：`Infinity`
+    timeout: 3000,
+  }
+}
+```
+
+`异步组件原理`
+默认渲染异步占位符节点，组件加载完毕后调用 $forceUpdate 强制更新，渲染加载完毕后的组件
+Vue 3 中是
+- 初始渲染时返回一个 **占位 vnode**（通常是注释节点或 fallback）
+- 当前渲染 effect 正常收集依赖
+- 加载完成后 Promise resolve，组件定义被写入 **响应式状态**
+- 触发依赖更新-对应的渲染 effect **自动重新执行**
+- 重新执行 render，生成真实组件 vnode
+- Diff 后替换占位节点
+
+## Vue nextTick 深度解析
+
+核心定义
+`nextTick` 是 Vue 提供的一个**异步回调处理机制**。它会将回调函数推迟到下一次 DOM 更新循环之后执行。
+
+核心原理：批处理与异步队列
+* **异步更新**：Vue 在修改数据时，视图不会立即同步更新，而是开启一个队列，并缓存在同一事件循环中发生的所有数据变更。
+* **去重优化**：如果同一个 Watcher 被多次触发，只会被推入队列一次，最终只执行一次视图更新，从而提升性能。
+* **回调合并**：`nextTick` 会将用户自定义的回调与 Vue 内部的视图更新回调（`flushSchedulerQueue`）放入同一个数组，按**入队顺序**依次执行。
+
+执行时序（Vue 2 的优雅降级）
+Vue 会根据浏览器支持情况，按以下优先级选择异步策略：
+1.  **Promise** (微任务)
+2.  **MutationObserver** (微任务)
+3.  **setImmediate** (宏任务，仅 IE 支持)
+4.  **setTimeout** (宏任务，兜底方案)
+
+关键点：为什么顺序很重要？
+* **数据变更后调用**：先修改数据（Vue 内部先将更新任务入队），再调 `nextTick`，此时自定义逻辑在更新逻辑之后执行，可获取**最新 DOM**。
+* **数据变更前调用**：先调 `nextTick` 再改数据，自定义逻辑会在更新逻辑之前执行，此时获取的是**旧 DOM**。
+
+Vue 2 vs Vue 3 差异
+* **Vue 2**：内部实现复杂，包含完整的任务队列管理和多种兼容性降级方案。
+* **Vue 3**：实现极大简化，直接基于 `Promise.then()`。因为不再考虑老旧浏览器（如 IE），本质上就是一个封装好的微任务。
+
+应用场景
+* 在数据修改后，立即获取更新后的 DOM 属性（如元素的 offsetHeight）。
+* 在使用第三方插件（如 ECharts、Swiper）需要操作由数据驱动生成的 DOM 时。
+
+## Keep-alive 核心原理与应用
+
+* **本质属性**：Vue 内置的**抽象组件**（Abstract Component），它自身不渲染 DOM 元素，也不会出现在父子组件树中。
+* **核心功能**：通过缓存**组件实例**（VNode）来避免组件在切换时的销毁与重新创建。下次激活时直接复用上一次渲染后的 DOM 节点，大幅提升性能。
+* **两大场景**：
+    * **动态组件**：配合 `<component :is="...">` 使用。
+    * **路由视图**：配合 `<router-view>` 缓存页面状态（如保留列表页滚动位置）。
+* **三个属性**：
+    * `include`：定义缓存白名单。
+    * `exclude`：定义缓存黑名单（优先级高于 include）。
+    * `max`：设置最大缓存实例数。
+* **LRU 算法（核心原理）**：
+    * 内部使用 `cache` 对象存储实例，`keys` 数组存储组件唯一标识。
+    * **最近最久未使用策略**：当缓存命中时，将该 Key 移动到数组末尾；当缓存数量超过 `max` 时，优先删除数组开头的（最久未访问的）实例。
+* **生命周期变化**：
+    * 被缓存组件的 `created` / `mounted` 仅在首次渲染执行。
+    * 新增两个专用钩子：`activated`（组件激活时调用）和 `deactivated`（组件被停用/缓存时调用）。
+* **问题处理**：由于不重新渲染，数据可能不更新。解决方案是在 `activated` 钩子中重新获取数据，或利用路由守卫进行逻辑处理。
+
+在 Vue 的源码实现中，缓存并不是存储在全局变量里，而是存储在 **Keep-alive 组件实例的 `cache` 属性**中。
+* **数据结构**：
+    * **Vue 2**：使用的是一个原生的 **Object** (`this.cache = Object.create(null)`)。
+    * **Vue 3**：升级为了 **Map** 对象 (`instance.cache = new Map()`)。
+* **存储内容**：Key 通常是组件的 ID 或用户定义的 Key，Value 是该组件的 **VNode（虚拟节点）**。VNode 中持有 `componentInstance`（Vue 2）或 `component`（Vue 3），即**真实的组件实例**。
+* **DOM 的去向**：当组件被切换时，它的真实 DOM 会被保存在缓存实例的属性中，并从父容器中移除（但并未销毁），等待下次被重新插入。 移动到了未渲染的空div中。
