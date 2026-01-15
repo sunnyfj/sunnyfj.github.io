@@ -15,4 +15,5 @@ title: Demos
 <router-link to="/demos/storage">storage</router-link>
 <router-link to="/demos/cors">cors</router-link>
 <router-link to="/demos/vue3">vue3</router-link>
+<router-link to="/demos/docker">docker</router-link>
 </div>

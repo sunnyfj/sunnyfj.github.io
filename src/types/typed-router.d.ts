@@ -72,6 +72,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/demos/docker': RouteRecordInfo<
+      '/demos/docker',
+      '/demos/docker',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/demos/event-loop': RouteRecordInfo<
       '/demos/event-loop',
       '/demos/event-loop',
@@ -159,6 +166,12 @@ declare module 'vue-router/auto-routes' {
     'pages/demos/css.md': {
       routes:
         | '/demos/css'
+      views:
+        | never
+    }
+    'pages/demos/docker.md': {
+      routes:
+        | '/demos/docker'
       views:
         | never
     }
