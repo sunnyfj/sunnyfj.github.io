@@ -255,3 +255,27 @@ while (true) {
   content += text
 }
 ```
+
+## chrome://net-internals/#hsts
+
+HSTS (HTTP Strict Transport Security)即HTTP严格传输安全：一种网站选择始终使用HTTPS的方式
+
+`
+Access to XMLHttpRequest at 'http://xxx.cn/xxx' from origin 'http://localhost:8082' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: Redirect is not allowed for a preflight request.
+`
+
+`HTTPS-First`
+
+这主要是现代浏览器推出的一项功能设置，不是服务器协议。
+
+默认尝试 HTTPS：当你在地址栏输入域名（如 example.com）而不指定协议时，浏览器会默认先尝试连接 https://example.com。
+
+降级机制：如果该网站不支持 HTTPS（连接失败或证书错误），浏览器通常会显示一个警告，询问你是否要降级使用不安全的 HTTP。
+
+核心价值：在服务器没有配置 HSTS 的情况下，依然尽可能保护用户的初次连接安全。
+
+HSTS/PKP domain 列表
+dynamic_sts_domain: gateway.devclx.cn
+dynamic_upgrade_mode: FORCE_HTTPS
+
+记录访问模式，自动升级为HTTPS 重定向
