@@ -82,6 +82,18 @@ lru 缓存 算法 最近最少使用算法
 
 implements
 
+channel 通道
+
+assert
+
+consume
+
+schema
+
+query
+
+mutation
+
 防抖：多次触发值用第一次 ？
 节流：多次触发 间断执行 ？
 
