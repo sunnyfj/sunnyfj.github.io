@@ -182,3 +182,50 @@ class UsersService implements OnApplicationShutdown {
 `Discovery Service` 是 NestJS 提供的工具，用于在运行时扫描应用程序中的模块、Provider、Controller 和方法，实现动态发现和操作这些元素。
 
 `Platform Agnosticism` 业务逻辑与具体通信平台无关，NestJS 通过适配器机制让相同模块、Provider、Controller 能在 HTTP、WebSocket、gRPC 等不同平台上复用，实现协议无关性。
+
+## RxJS
+
+RxJS 是一个基于 Observable 的响应式编程库，用来以流的方式处理异步和事件，特别擅长组合、取消和控制复杂异步逻辑。
+
+RxJS（Reactive Extensions for JavaScript） 是一个用于 响应式编程 的库， 核心思想是：
+把异步、事件、时间序列当作“数据流（Stream）”来处理
+
+Generator 像“同步流的语法糖”，RxJS 是“异步流的工业级解决方案”。
+
+常见处理对象：
+
+- HTTP 请求
+- 用户事件（点击、输入）
+- 定时器
+- WebSocket 推送
+- 多个异步任务的组合
+
+Observable（可观察对象）
+表示一个异步数据流。懒执行（不订阅不执行），可以发出 0 ~ N 个值
+
+subscribe（订阅）
+是 Observable 上的一个方法，用于“触发” Observable 开始发送值，同时也可以指定如何处理这些值（next、error、complete）。数据开始流动。可以随时取消
+
+Operator （操作符）
+对流进行 加工处理
+不改变原 Observable
+返回 新的 Observable
+```js
+obs$.pipe(
+  map(),
+  filter(),
+  tap()
+)
+```
+
+RxJS 的设计模型: 数据由 生产者主动推送，消费者通过订阅来接收数据。generator 函数pull拉模式，RxJS 函数push推模式
+
+Observable vs Promise
+
+| 对比项 | Promise | Observable |
+| ------ | ------- | ---------- |
+| 返回值 | 1 个 | 0 ~ N 个 |
+| 是否惰性 | 否 | 是 |
+| 是否可取消 | ❌ | ✅ |
+| 是否支持流式 | ❌ | ✅ |
+| 组合能力 | 一般 | 很强 |
