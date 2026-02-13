@@ -229,3 +229,290 @@ Observable vs Promise
 | 是否可取消 | ❌ | ✅ |
 | 是否支持流式 | ❌ | ✅ |
 | 组合能力 | 一般 | 很强 |
+
+-----
+
+## node
+node是一个js运行环境，node比浏览器更加强大，因为node有能力读写文件、操作数据库等。
+
+单线程 异步回调模型
+
+io操作处理比较快
+
+巨大运算量 不太适合 node 处理
+
+解释型语言 编译型语言？
+
+module.exports = {}
+
+```js
+// 大致的require函数实现
+function require(modulePath) {
+  // 1. 将modulePath转换为绝对路径: D:\repository\NodeJS\源码\myModule.js
+  // 2. 判断是否该模块已有缓存
+  // if(require.cache["D:\repository\NodeJS\源码\myModule.js"]){
+  //   return require.cache["D:\repository\NodeJS\源码\myModule.js"].result;
+  // }
+  // 3. 读取文件内容
+  // 4. 包裹到一个函数中
+  function _temp(module, exports, require, __dirname, __filename) {
+    console.log('当前模块路径:', __dirname)
+    console.log('当前模块文件:', __filename)
+    exports.c = 3
+    module.exports = {
+      a: 1,
+      b: 2
+    }
+    this.m = 5
+  }
+  // 5. 创建一个模块对象
+  module.exports = {}
+  const exports = module.exports
+  _temp.call(module.exports, module, exports, require, moddule.path, moddule.filename)
+}
+
+require.cache = {}
+```
+
+### Net
+
+net 模块是 Node.js 提供的 TCP 层网络能力，用来直接创建和操作原始 TCP 连接。
+
+层级关系
+```
+应用层
+└─ HTTP / WebSocket / RPC / FTP / SMTP
+传输层
+└─ TCP / UDP
+网络层
+└─ IP
+数据链路层
+└─ Ethernet / Wi-Fi
+物理层
+└─ 网线 / 光纤 / 无线电
+```
+
+TCP(传输层)：可靠、有序、面向连接，慢一点但放心
+    特点：建立连接（三次握手），可靠传输，顺序保证，流量 & 拥塞控制(网络堵了自动降速,自我保护)
+    代价：握手慢，头部大，状态多，并发连接多时消耗内存
+    常见应用：http/https、RPC（gRPC、Dubbo）、数据库连接、webSocket
+
+```ts
+import net from 'node:net'
+
+const server = net.createServer((socket) => {
+  socket.on('data', (data) => {
+    console.log(data.toString())
+  })
+})
+```
+
+UDP(传输层)：不可靠、无连接，快，但要自己兜底
+    特点：无连接，不保证可靠(可能丢)，极快、极轻（头部小，延迟低，适合高频小包）
+    代价：要自己处理重传、顺序、丢包
+    适用场景：DNS、视频直播、实时音视频、游戏同步
+
+```ts
+import dgram from 'node:dgram'
+
+const socket = dgram.createSocket('udp4')
+socket.send('hello', 3000, 'localhost')
+```
+
+`IP`网络层
+IP（Internet Protocol）是网络层协议，负责为数据包提供跨网络的寻址和路由转发能力。
+IP 协议负责跨网络寻址和路由转发，只管把包尽力送到目标主机，不关心是否成功。
+IP = 路网
+TCP = 物流系统
+HTTP = 快递内容格式
+
+IPv4：192.168.1.1
+IPv6：2001:db8::1
+
+IP 包内容：
+- 源IP
+- 目标IP
+- TTL (Time To Live) 存活时间 默认64（防止死循环）
+- 协议号（TCP=6、UDP=17）
+
+NAT（Network Address Translation）就是“地址翻译”，用来把私网 IP / 端口转换成公网 IP / 端口。
+
+`DNS`
+域名注册商（阿里云 / 腾讯云 / GoDaddy）:把域名注册到全球 DNS 体系中
+你需要在 DNS 里配置：
+A 记录（IPv4）: api.example.com → 47.xx.xx.xx
+AAAA 记录（IPv6）: api.example.com → 2001:db8::1
+完成 域名 → 公网 IP的映射关系
+
+IP 的核心特性
+
+- 无连接：不建立连接，包与包之间互不相关
+- 不可靠：不保证送达、不重传、不确认
+- 尽力而为：只负责把包“尽量”送到目标
+- 基于地址寻址：通过 IP 地址定位目标主机
+- 支持路由转发：数据包可经过多个网络节点转发
+- 支持分片与重组：处理不同网络的最大传输单元（MTU）
+
+```less
+           【公网】
+              |
+        ┌── 防火墙 ──┐   ← 能不能进
+        |             |
+      NAT / SLB     （拒绝）
+        |
+   ┌─ 交换机 ─┐       ← 往哪走
+   |           |
+ 服务A       服务B
+```
+
+```
+运维人员
+   ↓
+堡垒机   ← 谁在干活
+   ↓
+内网服务器
+```
+
+`socket`
+- socket 是一个特殊的文件描述符，用来表示一个 TCP 或 UDP 连接的端点(向网卡输送的端口 或 从网卡接收的端口)。
+- 在node中表现为一个双工流对象
+- 通过向流写入内容发送数据
+- 通过监听流的内容读取数据
+
+### http模块
+
+http模块建立在net模块之上，所以http模块也可以理解为net模块的封装，不需要直接操作socket。
+
+http.request(): 创建一个 HTTP 请求实例
+http.createServer(): 创建一个 HTTP 服务器实例
+
+客户端： 请求：clientRequest 对象, 响应：IncomingMessage 对象
+服务器： 请求：IncomingMessage 对象，响应：ServerResponse 对象
+
+server: http.server Class 对象
+
+静态资源服务器：
+```ts
+import fs from 'node:fs'
+import http from 'node:http'
+import path from 'node:path'
+
+http.createServer((req, res) => {
+  const filePath = path.join(__dirname, req.url)
+  fs.readFile(filePath, (err, data) => {
+    if (err) {
+      res.statusCode = 404
+      res.end('Not Found')
+      return
+    }
+    res.end(data)
+  })
+}).listen(3000)
+```
+
+### https模块
+
+https能保证数据在传输过程中的安全性，不能被窃取和篡改。获取的也是加密后的内容。
+
+对称加密：加密和解密使用相同的密钥（密钥只有一个）(常用算法：DES、3DES、AES、Blowfish等)
+非对称加密：密钥对（公钥和私钥）加密和解密使用不同的密钥（公钥加密，私钥解密）（常用算法：RSA、Elgamal、Rabin、D-H、ECC等）
+
+对称加密与非对称加密的区别同时使用：
+
+对称加密速度快，适合数据传输，但密钥分发困难；
+非对称加密解决了密钥分发问题，但性能较差；
+因此在实际系统中，通常先用非对称加密安全地交换对称密钥，再使用对称加密进行数据通信，比如 HTTPS。
+
+证书颁发机构 CA（Certificate Authority, CA）：验证网站域名的合法性，颁发证书 (机构的私钥是唯一的，用于签署证书，公钥是公开的)
+
+第一次访问之后先验证证书是否合法，合法后再使用对称加密进行通信。
+浏览器会缓存证书，下次访问时，会直接使用缓存的证书，而不需要再次验证。
+
+[流程](node1.png)
+
+http: 建立在 tcp/ip 层之上的
+https: 建立在 tcp/ip 层之上，再加一层 ssl 加密传输协议
+
+- 服务器有：公钥 + 私钥
+- 客户端只有：服务器公钥
+- 客户端生成对称密钥（Session Key）
+- 客户端用「服务器公钥」加密 Session Key
+- 只有服务器能用「服务器私钥」解开
+
+### node 生命周期 （事件循环）
+
+[流程](node2.png)
+
+### http
+
+Node 的 http 模块提供了创建 HTTP 服务器和客户端的底层能力。
+
+- tcp封装：net 模块（TCP HTTP 是构建在 TCP 之上的。
+- 流式处理
+- 事件驱动：基于事件循环的异步模型，处理高并发请求
+- keep-alive 连接复用：减少握手次数，提高效率
+
+版本演进时间线
+
+```
+HTTP/1.0  (1996)
+HTTP/1.1  (1997)  ← 用了20多年
+HTTP/2    (2015)
+HTTP/3    (2022)
+```
+
+核心能力对比
+
+| 特性   | HTTP/1.0 | HTTP/1.1 | HTTP/2 | HTTP/3    |
+| ---- | -------- | -------- | ------ | --------- |
+| 长连接  | ❌        | ✅        | ✅      | ✅         |
+| 多路复用 | ❌        | ❌        | ✅      | ✅         |
+| 协议格式 | 文本       | 文本       | 二进制    | 二进制       |
+| 头部压缩 | ❌        | ❌        | ✅      | ✅         |
+| 基于   | TCP      | TCP      | TCP    | QUIC(UDP) |
+| 队头阻塞 | 严重       | 严重       | TCP层仍有 | 基本解决      |
+| 性能   | 低        | 中        | 高      | 更高        |
+
+每个版本解决了什么问题
+
+`http1.0` 每个请求都需要建立新的连接，请求完成后立即关闭连接，导致性能低下。
+
+`http1.1` 引入了长连接(Keep-Alive)和管道化，减少了握手次数，提高了效率。但仍然存在队头阻塞问题(在应用层阻塞)。问题：串行执行，对头阻塞，浏览器限制连接数(6个)。
+
+`http2` 引入了二进制分帧、多路复用、头部压缩等机制，解决了队头阻塞问题，提高了性能。问题：仍然是基于 TCP 协议，如果丢包会导致整个连接阻塞。
+
+`http3` 基于 QUIC（基于 UDP） 协议，解决了 TCP 队头阻塞问题，握手慢，丢包卡顿。优势：连接更快，更稳定，移动网络更友好。
+
+```
+HTTP/3  ← 应用层
+   ↓
+QUIC  ← 传输层（用户实现的传输层）
+   ↓
+UDP  ← 传输层
+   ↓
+IP  ← 网络层
+```
+
+```
+http  ← 应用层
+   ↓
+TCP  ← 传输层
+   ↓
+IP  ← 网络层
+```
+
+`UDP`: UDP（User Datagram Protocol）是一个无连接、不可靠、快速的传输层协议。（适合实时）
+    特点：
+    - 无连接：不需要握手过程，直接发送数据。
+    - 不可靠：不保证数据的可靠传输，可能会丢失或重复。不会重传。
+    - 面向报文：发多少就是多少。不会拆包或粘包、重组流。
+    - 速度快：因为没有握手过程，没有重传机制，没有阻塞控制。
+
+`QUIC`: 是一种基于 UDP 实现的可靠传输协议，用来替代 TCP。
+    特点：
+    - 可靠传输：丢包重传，顺序保证。
+    - 拥塞控制：根据网络情况动态调整发送速率，避免拥塞。
+    - 多路复用：多个流互不干扰，丢一个流不影响其他流。(一条连接里，同时传多条独立数据流)
+    - 内置TLS: 默认是加密的，不需要额外的https握手。
+
+`https`: HTTPS = 先用 TCP 建连接，再用 TLS 建立加密信道，最后才传 HTTP 数据。
