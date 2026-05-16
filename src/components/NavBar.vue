@@ -40,22 +40,22 @@ const { y: scroll } = useWindowScroll()
         <RouterLink to="/talks" class="lt-md:hidden" title="Talks">
           Talks
         </RouterLink>
-        <RouterLink to="/sponsors-list" title="Sponsors">
-          <span class="lt-md:hidden">Sponsors</span>
-          <div i-ri-heart-line class="md:hidden" />
+        <RouterLink to="/resume" title="Resume">
+          <span class="lt-md:hidden">Resume</span>
+          <div i-ri-file-line class="md:hidden" />
         </RouterLink>
-        <RouterLink to="/podcasts" class="lt-md:hidden" title="Podcasts">
+        <!-- <RouterLink to="/podcasts" class="lt-md:hidden" title="Podcasts">
           <div i-ri-mic-line />
-        </RouterLink>
-        <RouterLink to="/photos" title="Photos">
+        </RouterLink> -->
+        <!-- <RouterLink to="/photos" title="Photos">
           <div i-ri-camera-3-line />
-        </RouterLink>
+        </RouterLink> -->
         <RouterLink to="/demos" title="Demos">
           <div i-ri-screenshot-line />
         </RouterLink>
-        <RouterLink to="/chat" title="Let's Chat">
+        <!-- <RouterLink to="/chat" title="Let's Chat">
           <div i-ri-chat-1-line />
-        </RouterLink>
+        </RouterLink> -->
         <a href="https://github.com/sunnyfj" target="_blank" title="GitHub" class="lt-md:hidden">
           <div i-uil-github-alt />
         </a>
