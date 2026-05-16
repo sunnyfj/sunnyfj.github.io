@@ -516,3 +516,290 @@ IP  ← 网络层
     - 内置TLS: 默认是加密的，不需要额外的https握手。
 
 `https`: HTTPS = 先用 TCP 建连接，再用 TLS 建立加密信道，最后才传 HTTP 数据。
+
+### EventEmitter nodejs 中事件通用管理机制 on('事件名', 回调函数) emit('事件名', 参数)
+
+```js
+const { EventEmitter } = require('node:events')
+
+const emitter = new EventEmitter()
+emitter.on('event', (a, b) => {
+  console.log(a, b)
+})
+emitter.emit('event', 'a', 'b')
+```
+
+### 数据库
+
+- SQL：关系型数据库，数据存储在表里，关系型数据库有 ACID 属性，数据结构为表和行。
+- NoSQL：非关系型数据库，数据存储在文档里，NoSQL 数据结构为键值对。
+- MongoDB：NoSQL 数据库，基于 JSON 的文档存储。
+- MySQL：关系型数据库，基于 SQL 的数据库。
+- Redis：内存数据库，基于键值对的数据库。
+- PostgreSQL：关系型数据库，基于 SQL 的数据库。
+- SQLite：关系型数据库，基于 SQL 的数据库。
+
+关系型数据库：mysql
+非关系型数据库：mongodb redis
+
+## 高阶函数
+
+高阶函数：函数作为参数 或 返回值（特点）
+
+可以对原有函数进行扩展或修改。 函数柯理化（Currying）是指将一个多参数函数转换为一系列单参数函数的技术。
+
+高阶函数可以缓存变量（闭包），实现缓存效果。
+
+函数的反柯理化（Uncurrying）是指将一个柯理化函数转换为一个多参数函数
+
+解决异步问题：实现发布订阅模式（事件驱动）
+
+```ts
+function a() {
+  // todo 一些逻辑
+  return function b() {
+    console.log('b')
+  }
+}
+
+function b(callback) {
+  callback()
+}
+
+// 柯理化（Currying）
+
+function sum(a, b, c) {
+  return a + b + c
+}
+
+function curry(func) {
+  return function curried(...args) {
+    if (args.length >= func.length) {
+      return func.apply(this, args)
+    }
+    else {
+      return curried.bind(this, ...args)
+    }
+  }
+}
+
+const curriedSum = curry(sum)
+console.log(curriedSum(1)(2)(3)) // 6
+
+// 偏函数（Partial Application）是指固定一个函数的某些参数，返回一个新函数，新函数接受剩余的参数。
+
+function partialAdd(a, b) {
+  return a + b
+}
+
+const add5 = partialAdd.bind(null, 5)
+console.log(add5(3)) // 8
+```
+编程模式 = 写代码的思想方式
+
+常见模式：
+1. 面向过程：按步骤执行
+2. 面向对象（OOP）：用对象组织代码
+3. 函数式（FP）：函数组合 + 无副作用
+4. 声明式：描述结果，不关心过程
+5. 事件驱动：由事件触发
+6. 响应式：数据变化驱动更新
+
+核心区别：
+- OOP：关注“对象是谁”
+- FP：关注“数据如何变化”
+
+前端实际是混合范式：
+React（函数式）+ Vue（响应式）+ Node（事件驱动）
+
+## promise
+
+什么是Promise?
+
+Promise是一种用于异步编程的JavaScript对象。主要用于处理异步操作的结果。
+
+- 异步导致的问题：回调地狱（让代码难以阅读）、错误处理（无法统一处理错误）、多个异步操作（"同步结果"困难）
+
+Promise可以使用.then()方法链式处理异步逻辑  (扁平化处理)
+Promise可以使用.catch()方法处理异步操作失败的情况  (错误处理)
+Promise提供.all()、.race()方法支持处理多个Promise对象的结果。
+
+`Promises/A+ 规范总结`
+
+**Promises/A+** 是 JavaScript Promise 的工业标准。它由开发者为开发者制定，旨在提供一个健全、具有互操作性的 Promise 实现标准。
+
+`1. 术语定义 (Terminology)`
+
+* **Promise**: 一个拥有符合该规范的 `then` 方法的对象或函数。
+* **Thenable**: 定义了 `then` 方法的对象或函数（用于兼容非 A+ 规范的 Promise）。
+* **Value (值)**: 任何合法的 JavaScript 值（包括 `undefined`、thenable 或 promise）。
+* **Reason (原因)**: 表示 promise 为什么被拒绝的值。
+* **Exception (异常)**: 使用 `throw` 语句抛出的值。
+
+`2. Promise 状态 (Promise States)`
+
+一个 Promise 必须处于以下三种状态之一：
+
+1.  Pending: 可以转换到 Fulfilled 或 Rejected 状态。
+2.  Fulfilled: 不能转换到任何其他状态。  必须有一个值（Value），且该值不可改变。
+3.  Rejected: 不能转换到任何其他状态。 必须有一个原因（Reason），且该原因不可改变。
+
+`3. Then 方法`
+
+这是规范最厚的部分，规定了 promise.then(onFulfilled, onRejected) 的标准行为：
+
+- 异步执行: onFulfilled 和 onRejected 必须在执行上下文栈仅包含“平台代码”（即事件循环）时异步调用。
+- 返回值: then 方法必须返回一个新的 Promise，这支撑了 Promise 的链式调用。
+- 多次调用: 同一个 Promise 的 then 可以被调用多次，回调必须按注册顺序执行。
+
+`4. Promise 解决程序`
+规范定义了一个抽象操作 [[Resolve]](promise, x)，用于处理 then 回调的返回值 x：
+
+- 如果 x 是 Promise: 使当前的 Promise 采纳 x 的状态。
+- 如果 x 是对象或函数（Thenable）: 尝试调用其 then 方法。这使得 Promises/A+ 能够“同化”那些非标准的 Promise 实现。
+- 如果 x 是普通值: 直接以 x 作为值将 Promise 设为 Fulfilled。
+
+如果一个 promise 被一个可 then 对象兑现，且该可 then 对象参与了一个循环的可 then 链，导致 [[Resolve]](promise, thenable) 的递归特性最终使得 [[Resolve]](promise, thenable) 被再次调用，那么遵循上述算法会导致无限递归。鼓励但不强制要求实现去检测此类递归，并以包含相关信息的 TypeError 作为原因来拒绝
+
+Promise 的链式调用
+- 返回值是普通值（非promise的值）：直接 resolve 传递到外层then的下一个then的成功中去
+- 没有返回值（抛错了）：直接 reject 会传递到外层then的下一个then的失败中
+- 返回的是Promise，回去解析返回 Promise解析后的值，传递成功或者失败 到外层的 下一个then的 成功或失败中。
+- 链式调用一般返回的是this。promise 为了扭转状态，而且还要保证promise的状态只能变化一次。因此这里返回新的Promise
+- then 的返回值定义为 x, x决定下一个then 走成功还是失败
+
+### 手写 Promise
+
+```js
+const PENDING = 'pending'
+const FULFILLED = 'fulfilled'
+const REJECTED = 'rejected'
+
+function resolvePromise(x, promise2, resolve, reject) {
+  // 用 x 的值决定 promise2 是成功还是失败
+  if (x === promise2) {
+    return reject(new TypeError('Chaining cycle detected for promise #<Promise>'))
+  }
+
+  // x 要么是 对象，要么是 函数，要么是 值
+  if ((typeof x === 'object' || x !== null) || (typeof x === 'function')) {
+    // 防止 then 函数被重复调用 如果已经调用过 不管是成功还是失败
+    let called = false
+
+    try {
+      const then = x.then // 可能是 undefined
+
+      if (typeof then === 'function') {
+        // 调用 then 函数，传入 resolve 和 reject 函数
+        // 通过 call 方法调用 then 函数，确保不用再次取值异常，及 this 指向 x
+        then.call(x, (y) => {
+          if (called) {
+            return
+          }
+          called = true
+          resolvePromise(y, promise2, resolve, reject)
+        }, (r) => {
+          if (called) {
+            return
+          }
+          called = true
+          reject(r)
+        })
+      }
+      else {
+        resolve(x)
+      }
+    }
+    catch (error) {
+      reject(error)
+    }
+  }
+  else {
+    // x 是普通值，直接 resolve
+    resolve(x)
+  }
+}
+
+class Promise {
+  constructor(executor) {
+    // 初始化状态为 pending
+    this.status = PENDING
+
+    // 初始化值和原因为 undefined
+    this.value = undefined
+    this.reason = undefined
+
+    // 初始化回调函数数组
+    this.onFulfilledCallbacks = []
+    this.onRejectedCallbacks = []
+
+    const resolve = (value) => {
+      // 如果状态不是 pending，直接返回 ，不改变状态  只有 pending 状态才能改变状态
+      if (this.status !== PENDING) {
+        return
+      }
+      this.status = FULFILLED
+      this.value = value
+
+      // 调用所有订阅的回调函数
+      this.onFulfilledCallbacks.forEach(cb => cb())
+      // 清空回调函数数组
+      // this.onFulfilledCallbacks = []
+    }
+
+    const reject = (reason) => {
+      // 如果状态不是 pending，直接返回 ，不改变状态  只有 pending 状态才能改变状态
+      if (this.status !== PENDING) {
+        return
+      }
+      this.status = REJECTED
+      this.reason = reason
+
+      // 调用所有订阅的回调函数
+      this.onRejectedCallbacks.forEach(cb => cb())
+      // 清空回调函数数组
+      // this.onRejectedCallbacks = []
+    }
+
+    // 立刻执行 executor 函数，传入 resolve 和 reject 函数
+    // 如果 executor 函数内部抛出错误，直接调用 reject 函数，默认等于失败状态
+    try {
+      executor(this.resolve, this.reject)
+    }
+    catch (error) {
+      reject(error)
+    }
+  }
+
+  then(onFulfilled, onRejected) {
+    // 处理 onFulfilled 和 onRejected 不是函数的情况  处理默认值  解决参数穿透问题 .then().then()
+    if (typeof onFulfilled !== 'function') {
+      onFulfilled = value => value
+    }
+    if (typeof onRejected !== 'function') {
+      onRejected = (reason) => {
+        throw reason
+      }
+    }
+
+    if (this.status === FULFILLED) {
+      onFulfilled(this.value)
+    }
+    if (this.status === REJECTED) {
+      onRejected(this.reason)
+    }
+    // 如果状态是 pending，存储回调函数  发布订阅模式  then相当于订阅事件  resolve相当于发布事件
+    if (this.status === PENDING) {
+      // 直接存储回调函数，没办法拿到函数的返回值  采用高阶函数
+      this.onFulfilledCallbacks.push(() => {
+        onFulfilled(this.value)
+      })
+      this.onRejectedCallbacks.push(() => {
+        onRejected(this.reason)
+      })
+    }
+
+    // 处理链式调用
+  }
+}
+```

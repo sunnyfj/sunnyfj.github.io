@@ -158,6 +158,30 @@ Promise.resolve().then(() => {
 - 按照W3C的标准，浏览器实现计时器时，如果嵌套层级超过5层，则会带有4毫秒的最小时间偏差
 - 受事件循环的影响，计时器的回调函数必须要等渲染主线程空闲时才会执行，所以也会有偏差
 
+### requestAnimationFrame
+
+requestAnimationFrame 是一个异步的 API，用于在浏览器重绘前执行回调函数。
+它确保了回调函数在浏览器重绘前执行，避免了在重绘过程中执行回调函数导致的性能问题。
+
+```js
+// 示例：使用 requestAnimationFrame 添加任务到渲染主线程的重绘队列
+requestAnimationFrame(() => {
+  console.log('重绘队列任务')
+})
+```
+
+### requestIdleCallback
+
+requestIdleCallback 是一个异步的 API，用于在浏览器空闲时执行回调函数。
+它确保了回调函数在浏览器空闲时执行，避免了在浏览器繁忙时执行回调函数导致的性能问题。
+
+```js
+// 示例：使用 requestIdleCallback 添加任务到渲染主线程的空闲队列
+requestIdleCallback(() => {
+  console.log('空闲队列任务')
+})
+```
+
 ## xxx
 - 单线程是异步产生的原因
 - 事件循环是异步的实现方式
