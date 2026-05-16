@@ -44,6 +44,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/demos/bff': RouteRecordInfo<
+      '/demos/bff',
+      '/demos/bff',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/demos/browser': RouteRecordInfo<
       '/demos/browser',
       '/demos/browser',
@@ -100,6 +107,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/demos/nodejs': RouteRecordInfo<
+      '/demos/nodejs',
+      '/demos/nodejs',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/demos/operations': RouteRecordInfo<
       '/demos/operations',
       '/demos/operations',
@@ -117,6 +131,13 @@ declare module 'vue-router/auto-routes' {
     '/demos/vue3': RouteRecordInfo<
       '/demos/vue3',
       '/demos/vue3',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/resume/': RouteRecordInfo<
+      '/resume/',
+      '/resume',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -149,6 +170,12 @@ declare module 'vue-router/auto-routes' {
     'pages/demos/index.md': {
       routes:
         | '/demos/'
+      views:
+        | never
+    }
+    'pages/demos/bff.md': {
+      routes:
+        | '/demos/bff'
       views:
         | never
     }
@@ -200,6 +227,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'pages/demos/nodejs.md': {
+      routes:
+        | '/demos/nodejs'
+      views:
+        | never
+    }
     'pages/demos/operations.md': {
       routes:
         | '/demos/operations'
@@ -215,6 +248,12 @@ declare module 'vue-router/auto-routes' {
     'pages/demos/vue3.md': {
       routes:
         | '/demos/vue3'
+      views:
+        | never
+    }
+    'pages/resume/index.md': {
+      routes:
+        | '/resume/'
       views:
         | never
     }
