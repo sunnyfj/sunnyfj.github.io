@@ -6,18 +6,19 @@ title: Demos
 # Demos Page
 
 <div>
-<router-link to="/demos/css">CSS</router-link>
-<router-link to="/demos/js">JS</router-link>
-<router-link to="/demos/carousel">carousel</router-link>
-<router-link to="/demos/event-loop">Event loop</router-link>
-<router-link to="/demos/browser">browser</router-link>
-<router-link to="/demos/network">network</router-link>
-<router-link to="/demos/storage">storage</router-link>
-<router-link to="/demos/cors">cors</router-link>
-<router-link to="/demos/vue3">vue3</router-link>
-<router-link to="/demos/docker">docker</router-link>
-<router-link to="/demos/operations">operations</router-link>
-<router-link to="/demos/bff">bff</router-link>
-<router-link to="/demos/nodejs">nodejs</router-link>
+<router-link to="/demos/css">CSS</router-link> |
+<router-link to="/demos/js">JS</router-link> |
+<router-link to="/demos/carousel">carousel</router-link> |
+<router-link to="/demos/event-loop">Event loop</router-link> |
+<router-link to="/demos/browser">browser</router-link> |
+<router-link to="/demos/network">network</router-link> |
+<router-link to="/demos/storage">storage</router-link> |
+<router-link to="/demos/cors">cors</router-link> |
+<router-link to="/demos/vue3">vue3</router-link> |
+<router-link to="/demos/docker">docker</router-link> |
+<router-link to="/demos/operations">operations</router-link> |
+<router-link to="/demos/bff">bff</router-link> |
+<router-link to="/demos/nodejs">nodejs</router-link> |
+<router-link to="/demos/ai">AI 应用</router-link> |
 
 </div>

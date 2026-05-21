@@ -44,6 +44,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/demos/ai': RouteRecordInfo<
+      '/demos/ai',
+      '/demos/ai',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/demos/bff': RouteRecordInfo<
       '/demos/bff',
       '/demos/bff',
@@ -170,6 +177,12 @@ declare module 'vue-router/auto-routes' {
     'pages/demos/index.md': {
       routes:
         | '/demos/'
+      views:
+        | never
+    }
+    'pages/demos/ai.md': {
+      routes:
+        | '/demos/ai'
       views:
         | never
     }
