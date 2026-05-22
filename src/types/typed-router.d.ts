@@ -93,6 +93,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/demos/engineering': RouteRecordInfo<
+      '/demos/engineering',
+      '/demos/engineering',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/demos/event-loop': RouteRecordInfo<
       '/demos/event-loop',
       '/demos/event-loop',
@@ -219,6 +226,12 @@ declare module 'vue-router/auto-routes' {
     'pages/demos/docker.md': {
       routes:
         | '/demos/docker'
+      views:
+        | never
+    }
+    'pages/demos/engineering.md': {
+      routes:
+        | '/demos/engineering'
       views:
         | never
     }
