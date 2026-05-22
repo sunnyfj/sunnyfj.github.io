@@ -24,5 +24,6 @@ title: Demos
 <router-link to="/demos/nodejs">nodejs</router-link> |
 <router-link to="/demos/ai">AI 应用</router-link> |
 <router-link to="/demos/engineering">工程化</router-link> |
+<router-link to="/demos/react">react</router-link> |
 
 </div>
