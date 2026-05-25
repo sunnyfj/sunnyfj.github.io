@@ -100,6 +100,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/demos/es6+': RouteRecordInfo<
+      '/demos/es6+',
+      '/demos/es6+',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/demos/event-loop': RouteRecordInfo<
       '/demos/event-loop',
       '/demos/event-loop',
@@ -239,6 +246,12 @@ declare module 'vue-router/auto-routes' {
     'pages/demos/engineering.md': {
       routes:
         | '/demos/engineering'
+      views:
+        | never
+    }
+    'pages/demos/es6+.md': {
+      routes:
+        | '/demos/es6+'
       views:
         | never
     }

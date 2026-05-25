@@ -517,6 +517,10 @@ IP  ← 网络层
 
 `https`: HTTPS = 先用 TCP 建连接，再用 TLS 建立加密信道，最后才传 HTTP 数据。
 
+HTTP/2 多路复用：在一个 TCP 连接里，同时并发传输多个请求和响应。 通过 流（Stream）来实现。
+
+核心目标：不再让 HTTP 请求排队等待。
+
 ### EventEmitter nodejs 中事件通用管理机制 on('事件名', 回调函数) emit('事件名', 参数)
 
 ```js
