@@ -279,3 +279,49 @@ dynamic_sts_domain: gateway.devclx.cn
 dynamic_upgrade_mode: FORCE_HTTPS
 
 记录访问模式，自动升级为HTTPS 重定向
+
+## http 缓存
+
+- 阶段一：强缓存（不问服务器，直接拿）
+
+浏览器直接从本地内存或磁盘读取缓存，不发送网络请求，状态码显示为 200 OK (from disk cache / from memory cache)。
+
+Cache-Control（绝对王者，ES6/现代主流）：
+利用相对时间控制。如 Cache-Control: max-age=31536000（代表未来 1 年内都直接用本地缓存）。
+
+no-cache：字面误区。它不是不缓存，而是代表每次使用前必须去服务器做协商验证。
+
+no-store：才是真正的彻底不缓存，任何地方都不存。
+
+- 阶段二：协商缓存（必须问服务器：变了没？）
+
+当强缓存过期了，浏览器会带上缓存凭证去问后端：“文件变过吗？”。如果没变，服务器返回 304 Not Modified，告诉浏览器继续用旧的；如果变了，返回 200 OK 并带上新文件。
+
+- ETag / If-None-Match（高精度，基于文件内容）：
+  - 机制： 服务器根据文件内容生成一个唯一的 Hash 字符串（ETag）。下次请求时，浏览器通过 If-None-Match 带上这个 Hash。服务器对比 Hash，一致就返回 304。
+  - 优缺点： 极其精准，只要文件改了一个字节就会变；缺点是服务器高频计算 Hash 有一定 CPU 性能开销。
+
+- Last-Modified / If-Modified-Since（低精度，基于修改时间）：
+  - 机制： 记录文件最后修改的时间戳。下次请求通过 If-Modified-Since 带过去对比。
+  - 短板： 只能精确到秒级。如果在一秒内文件改了多次，或者文件只是被编辑了但内容没变，它就会产生误判。
+
+- 现代前端工程（Vite / Webpack）的终极缓存策略
+
+策略 A：静态资源（JS, CSS, 图片）➔ 强缓存 1 年
+```txt
+Nginx
+location /assets/ {
+    add_header Cache-Control "public, max-age=31536000, immutable";
+}
+```
+只要用户不发版本，由于文件名没变，100% 走强缓存；一旦发版，HTML 里的引入路径变了，自动加载新文件，秒速更新且绝不缓存冲突。
+
+策略 B：入口文件（index.html）➔ 协商缓存
+工程落地： index.html 是所有资源的入口。如果它被强缓存了，前端更新了 Hash 文件名，用户也永远拿不到新版。
+
+总结：
+先看强缓存 (Cache-Control: max-age)，命中则直接 200 from cache，不发请求。
+
+过期则走协商缓存，带着凭证 (ETag / Last-Modified) 问服务器。没变返回 304，变了返回 200 和新资源。
+
+现代全栈配置： 入口 html 设 no-cache 走协商；带 Hash 的 JS/CSS 设 max-age=31536000 锁死强缓存。

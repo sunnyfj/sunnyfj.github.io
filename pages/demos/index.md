@@ -26,6 +26,8 @@ title: Demos
 <router-link to="/demos/engineering">工程化</router-link> |
 <router-link to="/demos/react">react</router-link> |
 <router-link to="/demos/es6+">es6+</router-link> |
+<router-link to="/demos/data-structure">数据结构 与 算法</router-link> |
+<router-link to="/demos/performance">性能优化</router-link> |
 
 </div>
 

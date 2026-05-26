@@ -86,6 +86,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/demos/data-structure': RouteRecordInfo<
+      '/demos/data-structure',
+      '/demos/data-structure',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/demos/docker': RouteRecordInfo<
       '/demos/docker',
       '/demos/docker',
@@ -138,6 +145,13 @@ declare module 'vue-router/auto-routes' {
     '/demos/operations': RouteRecordInfo<
       '/demos/operations',
       '/demos/operations',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
+    '/demos/performance': RouteRecordInfo<
+      '/demos/performance',
+      '/demos/performance',
       Record<never, never>,
       Record<never, never>,
       | never
@@ -237,6 +251,12 @@ declare module 'vue-router/auto-routes' {
       views:
         | never
     }
+    'pages/demos/data-structure.md': {
+      routes:
+        | '/demos/data-structure'
+      views:
+        | never
+    }
     'pages/demos/docker.md': {
       routes:
         | '/demos/docker'
@@ -282,6 +302,12 @@ declare module 'vue-router/auto-routes' {
     'pages/demos/operations.md': {
       routes:
         | '/demos/operations'
+      views:
+        | never
+    }
+    'pages/demos/performance.md': {
+      routes:
+        | '/demos/performance'
       views:
         | never
     }
