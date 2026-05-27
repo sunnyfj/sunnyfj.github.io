@@ -1,108 +1,638 @@
-# 性能优化
+# 前端性能优化体系
 
-## 编译阶段优化（工程构建层）
-1. 依赖深度瘦身
-别名替换 ： 检查 package.json。使用 date-fns 或 Day.js 彻底替换体积巨大的 Moment.js（Moment 带有大量本地化语言包，且不支持 Tree Shaking）。
+# 一、性能优化核心指标（Web Vitals）
 
-外链 CDN (Externals)： 将不常变动的巨型库（如 vue、vue-router、echarts）配置为 externals，不打包进最终的 Bundle 中，而是通过 HTML 的 `<script>` 标签走 CDN 加载。
+| 指标   | 全称                        | 含义     | 重点         |
+| ---- | ------------------------- | ------ | ---------- |
+| FCP  | First Contentful Paint    | 首次内容绘制 | 页面是否快速出现内容 |
+| LCP  | Largest Contentful Paint  | 最大内容绘制 | 首屏主体是否快速展示 |
+| CLS  | Cumulative Layout Shift   | 累积布局偏移 | 页面是否抖动     |
+| INP  | Interaction to Next Paint | 交互响应延迟 | 点击是否流畅     |
+| TTFB | Time To First Byte        | 首字节时间  | 服务端响应速度    |
 
-2. 现代编译器替代
-转译/压缩切换： 在构建管线中，用基于 Go 语言的 ESBuild 或基于 Rust 的 SWC 替代传统的 Babel 和 Terser 进行代码压缩与转译，编译速度可提升 10~100 倍。
+# 二、性能优化体系分层
 
-静态多线程： 如果使用 Webpack，引入 thread-loader 开启多进程打包；如果是 Vite，利用其基于 Rollup 的底层特性，确保预构建（Pre-bundling）充分发挥多核 CPU 性能。
+完整体系：
 
-3. 图像预处理与雪碧图
-自动化图片压缩： 引入 vite-plugin-imagemin 或 image-minimizer-webpack-plugin，在编译时无损/有损压缩 png/jpg，并自动生成下一代 Web 格式 webp 或 avif。
-
-SVG Sprite： 将项目内零散的 SVG 图标在编译阶段合并为一张 SVG 雪碧图，通过 `<use xlink:href="#id">` 调用
-
-## 编译后优化（网络、传输与首屏交付）
-1. 协议与连接层
-全量拥抱 HTTP/2 / HTTP/3： * HTTP/2： 开启多路复用（Multiplexing），突破老旧 HTTP/1.1 同域名下 6 个并发连接的限制，不再惧自研组件拆包过多。
-
-HTTP/3 (QUIC)： 基于 UDP，解决 HTTP/2 的 TCP 队头阻塞问题，在移动端弱网环境下抗丢包能力极强。
-
-预解析与预连接 ： 在 HTML 头部注入标准提示符，利用浏览器空闲带宽：
-```html
-<link rel="dns-prefetch" href="//api.yourdomain.com">
-<link rel="preconnect" href="https://cdn.yourdomain.com" crossorigin>
-<link rel="preload" href="/assets/main.js" as="script">
-<link rel="prefetch" href="/assets/future-page.js">
+```txt
+1. 网络层优化
+2. 构建层优化
+3. 加载层优化
+4. 渲染层优化
+5. JS 执行层优化
+6. 内存层优化
+7. 框架层优化
+8. 数据层优化
+9. 监控治理体系
 ```
 
-多域名预解析 / 预连接（常见于 CDN、埋点、监控、地图、支付等第三方）：
-```html
-<link rel="dns-prefetch" href="//cdn.yourdomain.com">
-<link rel="dns-prefetch" href="//static.yourdomain.com">
-<link rel="dns-prefetch" href="//api.yourdomain.com">
-<link rel="dns-prefetch" href="//sentry.yourdomain.com">
+# 三、网络层优化（Network）
 
-<link rel="preconnect" href="https://cdn.yourdomain.com" crossorigin>
-<link rel="preconnect" href="https://api.yourdomain.com" crossorigin>
+# 1. HTTP/2 与 HTTP/3
+
+## HTTP/1.1 问题
+
+浏览器同域连接限制：通常最多 6 个 TCP 连接
+
+导致：队头阻塞
+
+## HTTP/2
+
+核心特性：Multiplexing（多路复用）
+
+多个请求共享一个 TCP 连接。
+
+### 优势
+
+* Header 压缩
+* 多路复用
+* 并发能力提升
+
+## HTTP/3
+
+核心：QUIC + UDP
+
+解决：TCP 队头阻塞
+
+# 2. CDN
+
+## 边缘缓存
+
+适合：
+
+* JS
+* CSS
+* 图片
+* 字体
+
+# 3. Gzip 与 Brotli
+
+现代 Web 推荐：Brotli（br）
+
+压缩率：br > gzip > deflate
+
+# 4. DNS 预解析与预连接
+
+## dns-prefetch
+
+仅提前做 DNS 查询。
+
+```html
+<link rel="dns-prefetch" href="//api.xxx.com">
 ```
 
-连接提示符速查：
-| 能力 | 适用场景 | 注意点 |
-| --- | --- | --- |
-| dns-prefetch | 只提前做 DNS 解析，成本低 | 适合“可能会用到”的域名；对跨域资源同样有效 |
-| preconnect | 提前完成 DNS/TCP/TLS（更激进） | 只对“首屏必用”的关键域名使用；过多会抢占连接资源 |
-| preload | 把资源当成高优先级提前拉取 | 需要正确的 as；否则可能被重复下载或优先级不如预期 |
-| prefetch | 浏览器空闲时为“未来可能用到”的资源预取 | 适合下一跳路由/次屏资源，不要用于首屏关键资源 |
+适合：未来可能会访问的域名
 
-Script / Link 加载策略（首屏渲染与依赖顺序）：
+## preconnect
+
+提前完成：DNS + TCP + TLS
+
 ```html
-<script src="/assets/vendor.js" defer></script>
-<script src="/assets/main.js" defer></script>
-
-<script src="https://third-party.example.com/sdk.js" async></script>
-
-<script type="module" src="/assets/app.mjs"></script>
-<link rel="modulepreload" href="/assets/chunk-a.mjs">
+<link rel="preconnect" href="https://cdn.xxx.com" crossorigin>
 ```
 
-要点：
-- defer：并行下载，按文档顺序执行，等 DOM 解析完成后再执行；适合绝大多数主业务脚本
-- async：并行下载，下载完立刻执行，顺序不可控；适合统计/埋点/不依赖 DOM 与主逻辑的第三方脚本
-- modulepreload：为 ESM 依赖图提前拉取依赖 chunk，减少模块瀑布
-- link（CSS）：CSS 默认会阻塞渲染；首屏关键 CSS 尽量小而内聚，非关键 CSS 再拆分与延后加载
+适合：首屏关键资源域名
 
-2. 首屏极速交付策略
-SSR / SSG / ISR： 对于面向 SEO 或极度追求首屏的项目，采用服务端渲染（SSR）或静态站点生成（SSG），让浏览器直接接收直出 HTML，将首屏不卡顿的 FCP（首次内容绘制）时间压低到毫秒级。
+# 5. preload 与 prefetch
 
-骨架屏注入： 在编译时直接将骨架屏的 CSS/HTML 内联写入 index.html 的 #app 根节点内。在真实的 JS 还没有加载、全栈接口还没返回前，给用户完美的视觉预期。
+## preload
 
-##  运行时优化（V8 引擎、内存与渲染层）
-1. 虚拟滚动与时间分片
-- 虚拟滚动： 当后端接口一次性返回 10 万条列表数据时，坚决不全量渲染 DOM。只渲染可视区域内的 20 条 DOM 节点，滚动时动态复用并替换数据，保持 DOM 节点树维持在极轻量状态。
-- 时间分片： 如果必须执行高密度的 CPU 计算（如处理 5 万条数据的统计分析），使用 requestIdleCallback。将一个长任务拆解成多个 50ms 内的子任务，利用浏览器每帧渲染剩余的空闲时间去跑，防止主线程死锁卡顿。
-2. 内存泄漏与垃圾回收深度治理 (Memory & GC)
-- 弱引用管理 (WeakMap / WeakSet)： 当你需要为一个 DOM 节点或者临时对象建立缓存或关联映射时，使用 WeakMap。一旦该 DOM 节点被从 DOM 树中移除，WeakMap 里的引用会自动断开，允许 V8 的垃圾回收器直接将其回收，绝不留存。
-- 防范闭包逃逸： 严禁在长生命周期的全局事件（如 window.resize）中引用大体积的局部变量，确保闭包上下文在使用完毕后能够及时被 GC 回收。
+当前页面立即需要 高优先级加载。
 
-## 全套事件方案与交互优化
-1. 高频事件防御：防抖 (Debounce) 与 节流 (Throttle)防抖 (Debounce)：
-2. 现代动效引擎：requestAnimationFrame 节流 (rAF Throttle)
-当节流用于控制 视觉动效/滚动渐变 时，传统的自定义时间戳（如 16ms）并不完美。
+```html
+<link rel="preload" href="/main.js" as="script">
+```
 
-高级方案： 直接使用 requestAnimationFrame 作为节流阀。
+## prefetch
+
+未来页面可能需要 浏览器空闲时下载。
+
+```html
+<link rel="prefetch" href="/future.js">
+```
+
+# 6. Script 加载策略
+
+## defer
+
+```html
+<script defer src="/main.js"></script>
+```
+
+特点：
+
+* 并行下载
+* DOM 解析完成后执行
+* 保持执行顺序
+
+适合主业务脚本。
+
+## async
+
+```html
+<script async src="/sdk.js"></script>
+```
+
+特点：
+
+* 下载完成立即执行
+* 顺序不可控
+
+适合：
+
+* 埋点
+* 广告
+* 第三方 SDK
+
+---
+
+## modulepreload
+
+ESM 预加载依赖。
+
+```html
+<link rel="modulepreload" href="/chunk-a.mjs">
+```
+
+减少模块瀑布。
+
+# 四、构建层优化（Build）
+
+# 1. Tree Shaking
+
+核心：删除未使用代码
+
+依赖：ESM 静态分析
+
+# 2. Scope Hoisting
+
+Webpack：
+
+```txt
+ModuleConcatenationPlugin
+```
+
+作用：
+
+减少作用域包装
+减少闭包开销
+
+# 3. Code Splitting
+
+不仅仅是“拆包”。
+
+高级策略：按路由拆分、按业务拆分、按权限拆分、按设备拆分
+
+## 路由懒加载
+
+```js
+const User = () => import('./User.vue')
+```
+
+# 4. Vendor Chunk 拆分
+
+避免：一个巨大 vendor.js
+
+推荐：react-vendor、 chart-vendor、 editor-vendor 做细粒度缓存。
+
+# 5. 编译器替换
+
+传统：Babel + Terser
+
+现代：SWC（Rust）ESBuild（Go）
+
+# 6. 图片编译优化
+
+## 自动压缩
+
+工具：
+
+* vite-plugin-imagemin
+* image-minimizer-webpack-plugin
+
+## WebP / AVIF 转换
+
+现代图片格式：
+
+```txt
+AVIF > WebP > JPG/PNG
+```
+
+# 7. SVG Sprite
+
+将 SVG 合并为雪碧图：
+
+```html
+<use xlink:href="#icon-user"></use>
+```
+
+减少请求数。
+
+# 五、加载层优化（Loading）
+
+# 1. CSR / SSR / SSG / ISR
+
+| 模式  | 特点         |
+| --- | ---------- |
+| CSR | 首屏慢，交互快    |
+| SSR | 首屏快，服务端压力大 |
+| SSG | 极致静态化      |
+| ISR | 增量静态生成     |
+
+# 2. Streaming SSR
+
+传统 SSR：等待 HTML 全部生成
+
+Streaming SSR：边生成边返回
+
+React 18：renderToPipeableStream
+
+# 3. Islands Architecture（岛屿架构）
+
+核心思想：静态优先、局部 Hydration
+
+代表：Astro
+
+# 4. 骨架屏
+
+核心：提前给用户视觉反馈
+
+通常：直接内联到 index.html、避免白屏。
+
+# 六、浏览器渲染机制（重点）
+
+# 浏览器渲染流水线
+
+```txt
+JS
+↓
+Style
+↓
+Layout
+↓
+Paint
+↓
+Composite
+```
+
+---
+
+# 1. Layout（重排）
+
+触发：几何属性变化
+
+例如：
+
+* width
+* height
+* margin
+* padding
+
+# 2. Paint（重绘）
+
+触发：外观变化
+
+例如：
+
+* color
+* background
+
+# 3. Composite（合成）
+
+只发生图层合成。
+
+例如：transform opacity
+
+# 七、Layout Thrashing（布局抖动）
+
+核心问题：读写交替
+
+错误示例：
+
+```js
+div.style.width = '100px'
+console.log(div.offsetWidth)
+```
+
+浏览器：强制同步布局，导致频繁 reflow。
+
+# 优化方案
+
+## 读写分离
+
+先读，后写
+
+## requestAnimationFrame
+
+```js
+requestAnimationFrame(() => {
+  update()
+})
+```
+
+在浏览器下一帧执行。
+
+## FastDOM
+
+统一管理：DOM Read、DOM Write
+
+# 八、合成层优化（GPU）
+
+# 1. transform 与 opacity
+
+不会触发 Layout。因为：直接 GPU 合成
+
+# 2. will-change
+
+```css
+will-change: transform;
+```
+
+告诉浏览器：该元素即将变化
+
+## 注意
+
+不要滥用。因为：会增加 GPU 内存消耗
+
+# 3. CSS Containment
+
+```css
+contain: layout paint;
+```
+
+作用：隔离布局影响范围，减少重排扩散。
+
+# 九、JS 执行层优化
+
+# 1. Long Task（长任务）
+
+超过：50ms，会阻塞主线程。
+
+# 2. 时间分片
+
+拆分长任务：
+
+* setTimeout
+* MessageChannel
+* requestIdleCallback
+* scheduler
+
+# 3. requestIdleCallback
+
+浏览器空闲时执行：
+
+```js
+requestIdleCallback(() => {
+  heavyTask()
+})
+```
+
+适合：低优先级任务
+
+# 4. Web Worker
+
+CPU 密集型任务：不要放主线程
+
+适合：
+
+* Excel 解析
+* Markdown AST
+* 大数据计算
+* 图像处理
+
+# 5. OffscreenCanvas
+
+Canvas 放 Worker 执行。避免主线程卡死。
+
+# 十、内存优化（Memory）
+
+# 1. V8 垃圾回收
+
+## 新生代 Scavenge
+
+## 老生代 Mark-Sweep
+
+# 2. 常见内存泄漏
+
+| 类型     | 示例              |
+| ------ | --------------- |
+| 定时器    | setInterval 未清理 |
+| 全局事件   | resize 未 remove |
+| 闭包     | 大对象逃逸           |
+| DOM 引用 | 节点已删除但仍被引用      |
+| 缓存     | Map 无限增长        |
+
+# 3. WeakMap / WeakSet
+
+特点：弱引用不会阻止 GC
+
+适合：DOM 缓存
+
+# 十一、事件与交互优化
+
+# 1. 防抖（Debounce）
+
+核心：最后一次执行
+
+适合：
+
+* 搜索框
+* resize
+
+# 2. 节流（Throttle）
+
+核心：固定时间执行一次
+
+适合：
+
+* scroll
+* mousemove
+
+# 3. rAF 节流（高级）
 
 ```js
 let ticking = false
+
 window.addEventListener('scroll', () => {
   if (!ticking) {
-    window.requestAnimationFrame(() => {
-      // 🚀 完美的视觉写入操作：只在浏览器刷新前夕执行，彻底告别掉帧
-      updateScrollPosition()
+    requestAnimationFrame(() => {
+      update()
       ticking = false
     })
+
     ticking = true
   }
 })
 ```
-3. 事件委托: 利用 事件冒泡（Event Bubbling） 机制，通过 e.target 事件源，内存开销从 O(N) 变为为 O(1)
-4. 滚动性能解耦
-    - 底层痛点： 移动端在滑动屏幕（touchstart / touchmove）时，浏览器在滚动前必须等待你的事件回调函数执行完毕，以确认你有没有调用 e.preventDefault() 来阻止滚动。这会导致手势滑动的显著延迟感。
-    - 破局： 如果你的事件里不需要阻止滚动，绑定时明确传参 { passive: true }，浏览器会立即执行事件回调函数，而不会等待滚动完成。
+
+优势：与浏览器刷新频率同步
+
+# 4. passive 事件
+
 ```js
-window.addEventListener('touchmove', handleTouchMove, { passive: true })
+window.addEventListener(
+  'touchmove',
+  handle,
+  { passive: true }
+)
 ```
+
+作用：避免浏览器等待 preventDefault。提升滚动流畅度。
+
+# 5. 事件委托
+
+利用：事件冒泡O(N) -> O(1)
+
+# 十二、大数据渲染优化
+
+# 1. 虚拟滚动
+
+核心：DOM 数量恒定，不是：数据量恒定。
+
+# 2. 分页 vs 虚拟列表
+
+| 方案   | 优点   | 缺点     |
+| ---- | ---- | ------ |
+| 分页   | 简单   | 用户体验一般 |
+| 虚拟列表 | 极致流畅 | 实现复杂   |
+
+# 十三、框架层优化
+
+# Vue3 优化
+
+## Block Tree
+
+动态节点打 PatchFlag。
+
+减少 Diff。
+
+## 静态提升
+
+静态节点：只创建一次
+
+## PatchFlag
+
+编译阶段标记：哪些节点需要更新
+
+# React Fiber
+
+核心：可中断渲染
+
+同步递归：改造成链表调度
+
+# 十四、图片优化
+
+# 1. 响应式图片
+
+```html
+<picture>
+  <source srcset="a.avif" type="image/avif">
+  <source srcset="a.webp" type="image/webp">
+  <img src="a.jpg">
+</picture>
+```
+
+# 2. 图片懒加载
+
+```html
+<img loading="lazy">
+```
+
+# 3. Base64
+
+适合：小图标，避免额外请求。
+
+# 十五、性能监控与治理
+
+# 1. Lighthouse
+
+分析：
+
+* FCP
+* LCP
+* CLS
+* TTI
+
+# 2. Chrome Performance
+
+分析：
+
+* Long Task
+* Layout
+* Paint
+* JS 执行
+
+# 3. Performance API
+
+```js
+performance.now()
+performance.mark()
+performance.measure()
+```
+
+# 4. PerformanceObserver
+
+监控：Long Task
+
+# 5. RUM（真实用户监控）
+
+采集：
+
+* 白屏
+* 崩溃率
+* Web Vitals
+* 请求耗时
+
+# 6. 常见监控平台
+
+* Sentry
+* ARMS
+* Fundebug
+
+# 十六、移动端专项优化
+
+# 1. 300ms 点击延迟
+
+现代浏览器已大幅改善。
+
+# 2. GPU 加速
+
+```css
+transform: translateZ(0);
+```
+
+触发合成层。
+
+# 3. passive 滚动优化
+
+移动端核心优化点。
+
+# 十七、性能优化排查思路（高级）
+
+真正高级回答：先定位瓶颈层级，再做针对性治理
+
+常见排查：
+
+```txt
+网络层
+↓
+Bundle 体积
+↓
+主线程阻塞
+↓
+Layout Thrashing
+↓
+长任务
+↓
+内存泄漏
+```
+
+# 十八、性能分析工具
+
+| 工具                 | 用途        |
+| ------------------ | --------- |
+| Lighthouse         | 综合性能评分    |
+| Chrome Performance | 渲染与 JS 分析 |
+| WebPageTest        | 网络性能      |
+| Memory 面板          | 内存泄漏      |
+| Coverage           | 检查无用代码    |

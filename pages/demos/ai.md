@@ -118,3 +118,41 @@ package.json
 SSE 是 Server-Sent Events（服务器发送事件） 的缩写
 
 简单来说，它是一种让服务器向浏览器“单向推送”实时数据的技术。
+
+## 为什么要用Agent
+
+固定SOP存在
+人工重复性高
+有明确输入输出
+可以工具调用
+可自动执行流程
+
+## Agent架构
+Planner
+Memory
+Tool Call
+Workflow
+MCP
+Function Calling
+RAG
+多Agent协作
+
+我主要负责整体架构、Agent流程、Prompt设计、Node服务层和前端交互。
+模型层主要基于现成LLM API，没有自己训练模型。
+但我做了工具链封装、上下文管理和业务工作流。
+
+## Agent 本质是：
+
+LLM + Memory + Planning + Tool Use + Workflow 的组合。
+
+## RAG 为什么不够
+单纯 RAG 只是“检索+问答”。
+
+真正业务Agent还需要：
+状态管理
+工具调用
+工作流编排
+多步骤决策
+结果校验
+
+所以很多业务不能只靠“对话+知识库”。
