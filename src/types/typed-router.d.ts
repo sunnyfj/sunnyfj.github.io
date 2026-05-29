@@ -163,6 +163,13 @@ declare module 'vue-router/auto-routes' {
       Record<never, never>,
       | never
     >,
+    '/demos/sso': RouteRecordInfo<
+      '/demos/sso',
+      '/demos/sso',
+      Record<never, never>,
+      Record<never, never>,
+      | never
+    >,
     '/demos/storage': RouteRecordInfo<
       '/demos/storage',
       '/demos/storage',
@@ -314,6 +321,12 @@ declare module 'vue-router/auto-routes' {
     'pages/demos/react.md': {
       routes:
         | '/demos/react'
+      views:
+        | never
+    }
+    'pages/demos/sso.md': {
+      routes:
+        | '/demos/sso'
       views:
         | never
     }

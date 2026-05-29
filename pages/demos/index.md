@@ -28,6 +28,7 @@ title: Demos
 <router-link to="/demos/es6+">es6+</router-link> |
 <router-link to="/demos/data-structure">数据结构 与 算法</router-link> |
 <router-link to="/demos/performance">性能优化</router-link> |
+<router-link to="/demos/sso">sso</router-link> |
 
 </div>
 
@@ -46,4 +47,4 @@ title: Demos
 
 近一两年我重点做 AI 工程化落地：通过 Prompt as Code、.agents 上下文注入和工作流 SOP，把团队规则、接口契约与私有组件库能力固化到 IDE 侧，团队 AI 代码采纳率提升到 45%+，规范类低级问题减少约 80%，同时显著降低新人上手成本。
 
-我希望应聘的岗位是高级前端/负责人方向，能在一线解决工程边界问题，也能把规范、基建和协作机制做成团队的长期收益。谢谢。
+我希望应聘的岗位是高级前端/全栈开发/负责人方向，能在一线解决工程边界问题，也能把规范、基建和协作机制做成团队的长期收益。谢谢。
