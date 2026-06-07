@@ -156,3 +156,11 @@ LLM + Memory + Planning + Tool Use + Workflow 的组合。
 结果校验
 
 所以很多业务不能只靠“对话+知识库”。
+
+-----
+
+## AI全栈开发
+
+sql 数据库
+
+nestjs

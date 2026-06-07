@@ -228,3 +228,50 @@ Code 解决的是“传输阶段的安全问题”：隔离了浏览器前端对
 SSO 中心验证 sso_session 合法，无需用户再次输入密码，直接秒级生成属于 CRM 的新 Code 并闪回。
 
 再次触发上述“阶段二”：CRM 网关通过新 Code 换取双 Token，在 crm.xxx.com 下落地第一方 Cookie，全流程用户无感知。
+
+## 如果面试官问：“你的 BFF 层安全机制怎么做的？secret 存在哪里？”
+
+“在我们的全栈架构中，BFF 层作为天然的内网边界，其 secret 安全遵循了零信任与配置分离原则。
+
+我们摒弃了 .env 本地文件或硬编码的形式，将 JWT 签名私钥以及 SSO 的 ClientSecret 统一托管在内网隔离的 Nacos 配置中心。
+
+在 NestJS 服务启动的 Bootstrap 阶段，BFF 会通过内网密钥通过 SDK 异步拉取 Nacos 的加密配置流，将其解密后常驻在服务器的内存上下文中，全程代码不落盘、Git不留痕。
+
+这样做不仅实现了微服务集群下的配置中心化审计与密钥动态轮转（Rotation），同时借助 Nacos 的 Namespace 权限隔离，确保了生产级凭证的绝对安全。”
+
+生产级修复方案：动态注入内存，拒绝污染 process.env
+不要把 Nacos 拉下来的密钥挂载到全局 process.env 上。直接在 NestJS 的初始化阶段，通过一个自定义的动态配置模块（Custom Configuration）将其直接注入到私有的 ConfigService 内存上下文中：
+
+```ts
+// NestJS 动态配置实例化（不经过 process.env）
+import { Global, Module } from '@nestjs/common'
+import { ConfigService } from '@nestjs/config'
+import { NacosConfigClient } from 'nacos-config-client'
+
+@Global()
+@Module({
+  providers: [
+    {
+      provide: ConfigService,
+      useFactory: async () => {
+        const client = new NacosConfigClient({ /* ... */ })
+        const raw = await client.getConfig('bff-secret', 'DEFAULT_GROUP')
+        const configMap = JSON.parse(raw)
+
+        // 核心：直接返回对象，该对象仅在 NestJS 依赖注入上下文中流转，全局不可见
+        return new ConfigService(configMap)
+      }
+    }
+  ],
+  exports: [ConfigService]
+})
+export class SecurityConfigModule {}
+```
+
+## 111
+
+“在我们的架构设计中，我没有让 NestJS BFF 变得臃肿去直接连接 Redis 或接管注销状态。为了保持网关层的极致轻量化与横向弹性伸缩能力，我们将有状态的 Redis 管理、令牌吊销和黑名单逻辑全部下沉到专业的后端微服务集群中。
+
+NestJS BFF 在这里扮演的是一个**‘同源安全中转站’与‘Cookie 搬运工’**的角色。
+
+它利用 Node.js 异步 I/O 的高性能，只负责在内网进行轻量级的服务间通信（Server-to-Server）。当后端服务换回 Token 后，NestJS 通过响应拦截器，将敏感的长效令牌从 Body 中抽离，重写为 crm.xxx.com 自有域名下的 HttpOnly Cookie 下发给浏览器。在注销时，它同样仅作为 Cookie 提取器，将凭证回传给后端触发 Redis 状态熔断，最后在前端物理擦除 Cookie。这种设计既利用了 Node.js 贴近前端的优势解决了SameSite跨域限制，又保持了后端对数据和资产的绝对集中控制权。”
